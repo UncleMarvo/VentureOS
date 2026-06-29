@@ -1,0 +1,12 @@
+C:\WORK\VentureOS\src\VentureOS.Domain\bin\Debug\net9.0\VentureOS.Domain.deps.json
+C:\WORK\VentureOS\src\VentureOS.Domain\bin\Debug\net9.0\VentureOS.Domain.dll
+C:\WORK\VentureOS\src\VentureOS.Domain\bin\Debug\net9.0\VentureOS.Domain.pdb
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\VentureOS.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\VentureOS.Domain.AssemblyInfoInputs.cache
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\VentureOS.Domain.AssemblyInfo.cs
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\VentureOS.Domain.csproj.CoreCompileInputs.cache
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\VentureOS.Domain.sourcelink.json
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\VentureOS.Domain.dll
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\refint\VentureOS.Domain.dll
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\VentureOS.Domain.pdb
+C:\WORK\VentureOS\src\VentureOS.Domain\obj\Debug\net9.0\ref\VentureOS.Domain.dll

@@ -1,0 +1,6 @@
+@VentureOS.Api_HostAddress = http://localhost:5197
+
+GET {{VentureOS.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
