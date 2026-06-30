@@ -7,6 +7,7 @@ using VentureOS.Domain.Observations;
 using VentureOS.Domain.Assumptions;
 using VentureOS.Domain.Challenges;
 using VentureOS.Domain.Decisions;
+using VentureOS.Domain.Lessons;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -1232,6 +1233,160 @@ public sealed class CaseTests
     }
 
     // ==================================
+    // LESSON TESTS
+    // ==================================
+    [Fact]
+    public void RecordLesson_WithValidDraft_RecordsLesson()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var decisionId = CreateValidDecision(ventureCase);
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "Pricing evidence is required before proceeding.",
+                "The decision required more research because willingness-to-pay evidence was missing.",
+                Confidence.FromPercentage(75),
+                [decisionId]));
+
+        Assert.True(result.IsSuccess);
+
+        var lesson = Assert.Single(ventureCase.Lessons);
+
+        Assert.Equal(ventureCase.Id, lesson.CaseId);
+        Assert.Equal("Pricing evidence is required before proceeding.", lesson.Summary);
+        Assert.Equal("The decision required more research because willingness-to-pay evidence was missing.", lesson.Detail);
+        Assert.Equal(75, lesson.Confidence.Value);
+        Assert.Contains(decisionId, lesson.DecisionIds);
+    }
+
+    [Fact]
+    public void RecordLesson_WithEmptySummary_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var decisionId = CreateValidDecision(ventureCase);
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "",
+                "Valid detail.",
+                Confidence.FromPercentage(70),
+                [decisionId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Lesson summary is required.", result.Error);
+    }
+
+    [Fact]
+    public void RecordLesson_WithEmptyDetail_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var decisionId = CreateValidDecision(ventureCase);
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "Valid summary.",
+                "",
+                Confidence.FromPercentage(70),
+                [decisionId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Lesson detail is required.", result.Error);
+    }
+
+    [Fact]
+    public void RecordLesson_WithNoDecisionIds_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "Valid summary.",
+                "Valid detail.",
+                Confidence.FromPercentage(70),
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Lesson must reference at least one decision.", result.Error);
+    }
+
+    [Fact]
+    public void RecordLesson_WithUnknownDecisionId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "Valid summary.",
+                "Valid detail.",
+                Confidence.FromPercentage(70),
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Lesson cannot reference decisions that do not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void RecordLesson_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var decisionId = CreateValidDecision(ventureCase);
+
+        ventureCase.Archive();
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "Valid summary.",
+                "Valid detail.",
+                Confidence.FromPercentage(70),
+                [decisionId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot record lessons for an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void RecordLesson_WithDuplicateDecisionIds_StoresDistinctDecisionIds()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var decisionId = CreateValidDecision(ventureCase);
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "Valid summary.",
+                "Valid detail.",
+                Confidence.FromPercentage(70),
+                [decisionId, decisionId]));
+
+        Assert.True(result.IsSuccess);
+
+        var lesson = Assert.Single(ventureCase.Lessons);
+
+        Assert.Single(lesson.DecisionIds);
+    }
+
+    [Fact]
+    public void RecordLesson_WithValidDraft_RaisesLessonRecordedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var decisionId = CreateValidDecision(ventureCase);
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.RecordLesson(
+            new LessonDraft(
+                "Valid summary.",
+                "Valid detail.",
+                Confidence.FromPercentage(70),
+                [decisionId]));
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<LessonRecordedEvent>(domainEvent);
+    }
+
+    // ==================================
     // HELPER METHODS
     // ==================================
     private static Hypothesis CreateValidHypothesis(Case ventureCase)
@@ -1283,6 +1438,27 @@ public sealed class CaseTests
                 Confidence.FromPercentage(55)));
 
         return ventureCase.Assumptions.Last().Id;
+    }
+
+    private static Guid CreateValidDecision(Case ventureCase)
+    {
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var assumptionId = CreateValidAssumption(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Should we continue researching this opportunity?",
+                DecisionOutcome.MoreResearchRequired,
+                "The opportunity has some support, but pricing evidence is missing.",
+                "Further research should clarify willingness to pay.",
+                Confidence.FromPercentage(65),
+                [evidenceId],
+                [assumptionId],
+                [hypothesis.Id],
+                []));
+
+        return ventureCase.Decisions.Last().Id;
     }
 }
 

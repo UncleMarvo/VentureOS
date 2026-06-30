@@ -6,6 +6,7 @@ using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Assumptions;
 using VentureOS.Domain.Challenges;
 using VentureOS.Domain.Decisions;
+using VentureOS.Domain.Lessons;
 
 namespace VentureOS.Domain.Cases;
 
@@ -17,6 +18,7 @@ public sealed class Case : AggregateRoot
     private readonly List<Assumption> _assumptions = [];
     private readonly List<Challenge> _challenges = [];
     private readonly List<Decision> _decisions = [];
+    private readonly List<Lesson> _lessons = [];
 
     private Case(
         Guid id,
@@ -54,6 +56,8 @@ public sealed class Case : AggregateRoot
     public IReadOnlyCollection<Challenge> Challenges => _challenges.AsReadOnly();
 
     public IReadOnlyCollection<Decision> Decisions => _decisions.AsReadOnly();
+
+    public IReadOnlyCollection<Lesson> Lessons => _lessons.AsReadOnly();
 
     public static Result<Case> Create(string title, string mission)
     {
@@ -496,5 +500,63 @@ public sealed class Case : AggregateRoot
     {
         var knownChallengeIds = _challenges.Select(challenge => challenge.Id).ToHashSet();
         return challengeIds.All(knownChallengeIds.Contains);
+    }
+
+    // ============================
+    // LESSONS
+    // ============================
+    public Result RecordLesson(LessonDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result.Failure("Cannot record lessons for an archived case.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Summary))
+        {
+            return Result.Failure("Lesson summary is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Detail))
+        {
+            return Result.Failure("Lesson detail is required.");
+        }
+
+        if (draft.DecisionIds.Count == 0)
+        {
+            return Result.Failure("Lesson must reference at least one decision.");
+        }
+
+        if (!AllDecisionsBelongToCase(draft.DecisionIds))
+        {
+            return Result.Failure("Lesson cannot reference decisions that do not belong to the case.");
+        }
+
+        var lesson = new Lesson(
+            Guid.NewGuid(),
+            Id,
+            draft.Summary.Trim(),
+            draft.Detail.Trim(),
+            draft.Confidence,
+            draft.DecisionIds.Distinct().ToArray(),
+            DateTime.UtcNow);
+
+        _lessons.Add(lesson);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new LessonRecordedEvent(
+            Id,
+            lesson.Id,
+            lesson.Summary));
+
+        return Result.Success();
+    }
+
+    private bool AllDecisionsBelongToCase(IReadOnlyCollection<Guid> decisionIds)
+    {
+        var knownDecisionIds = _decisions.Select(decision => decision.Id).ToHashSet();
+        return decisionIds.All(knownDecisionIds.Contains);
     }
 }
