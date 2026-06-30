@@ -6,6 +6,7 @@ using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Observations;
 using VentureOS.Domain.Assumptions;
 using VentureOS.Domain.Challenges;
+using VentureOS.Domain.Decisions;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -896,6 +897,340 @@ public sealed class CaseTests
         Assert.IsType<ChallengeRaisedEvent>(domainEvent);
     }
 
+    // ======================================
+    // DECISION TESTS
+    // ======================================
+    [Fact]
+    public void RecordDecision_WithValidDraft_RecordsDecision()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var assumptionId = CreateValidAssumption(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                hypothesis.Id,
+                "The market may not be willing to pay.",
+                "No direct pricing evidence has been collected.",
+                Confidence.FromPercentage(70)));
+
+        var challengeId = ventureCase.Challenges.Single().Id;
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Should we continue researching this opportunity?",
+                DecisionOutcome.MoreResearchRequired,
+                "The opportunity has some support, but pricing evidence is missing.",
+                "Further research should clarify willingness to pay.",
+                Confidence.FromPercentage(65),
+                [evidenceId],
+                [assumptionId],
+                [hypothesis.Id],
+                [challengeId]));
+
+        Assert.True(result.IsSuccess);
+
+        var decision = Assert.Single(ventureCase.Decisions);
+
+        Assert.Equal(ventureCase.Id, decision.CaseId);
+        Assert.Equal("Should we continue researching this opportunity?", decision.Question);
+        Assert.Equal(DecisionOutcome.MoreResearchRequired, decision.Outcome);
+        Assert.Equal("The opportunity has some support, but pricing evidence is missing.", decision.Rationale);
+        Assert.Equal("Further research should clarify willingness to pay.", decision.ExpectedOutcome);
+        Assert.Equal(65, decision.Confidence.Value);
+        Assert.Contains(evidenceId, decision.EvidenceIds);
+        Assert.Contains(assumptionId, decision.AssumptionIds);
+        Assert.Contains(hypothesis.Id, decision.HypothesisIds);
+        Assert.Contains(challengeId, decision.ChallengeIds);
+    }
+
+    [Fact]
+    public void RecordDecision_WithEmptyQuestion_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision question is required.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithEmptyRationale_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision rationale is required.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithEmptyExpectedOutcome_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision expected outcome is required.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithNoEvidence_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [],
+                [],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision must reference at least one piece of evidence.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithNoHypotheses_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision must reference at least one hypothesis.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithUnknownEvidence_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [Guid.NewGuid()],
+                [],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision cannot reference evidence that does not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithUnknownAssumption_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [Guid.NewGuid()],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision cannot reference assumptions that do not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithUnknownHypothesis_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [Guid.NewGuid()],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision cannot reference hypotheses that do not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithUnknownChallenge_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [hypothesis.Id],
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Decision cannot reference challenges that do not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        ventureCase.Archive();
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot record decisions for an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void RecordDecision_WithDuplicateReferences_StoresDistinctReferences()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var assumptionId = CreateValidAssumption(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId, evidenceId],
+                [assumptionId, assumptionId],
+                [hypothesis.Id, hypothesis.Id],
+                []));
+
+        Assert.True(result.IsSuccess);
+
+        var decision = Assert.Single(ventureCase.Decisions);
+
+        Assert.Single(decision.EvidenceIds);
+        Assert.Single(decision.AssumptionIds);
+        Assert.Single(decision.HypothesisIds);
+    }
+
+    [Fact]
+    public void RecordDecision_WithValidDraft_RaisesDecisionRecordedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.RecordDecision(
+            new DecisionDraft(
+                "Valid question?",
+                DecisionOutcome.Approved,
+                "Valid rationale.",
+                "Valid expected outcome.",
+                Confidence.FromPercentage(70),
+                [evidenceId],
+                [],
+                [hypothesis.Id],
+                []));
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<DecisionRecordedEvent>(domainEvent);
+    }
+
     // ==================================
     // HELPER METHODS
     // ==================================
@@ -914,7 +1249,7 @@ public sealed class CaseTests
                 [evidenceId],
                 [assumptionId]));
 
-        return ventureCase.Hypotheses.Single();
+        return ventureCase.Hypotheses.Last();
     }
 
     private static Guid CreateValidEvidence(Case ventureCase)
@@ -927,16 +1262,16 @@ public sealed class CaseTests
                 ObservationSource.ManualNote,
                 Confidence.FromPercentage(80)));
 
-        Guid observationId = ventureCase.Observations.Single().Id;
+        var observation = ventureCase.Observations.Last();
 
         ventureCase.CreateEvidence(
             new EvidenceDraft(
                 "Valid evidence summary.",
                 "Valid evidence interpretation.",
                 EvidenceDirection.Supports,
-                [observationId]));
+                [observation.Id]));
 
-        return ventureCase.Evidence.Single().Id;
+        return ventureCase.Evidence.Last().Id;
     }
 
     private static Guid CreateValidAssumption(Case ventureCase)
@@ -947,7 +1282,7 @@ public sealed class CaseTests
                 "The problem appears recurring and costly enough to justify paid automation.",
                 Confidence.FromPercentage(55)));
 
-        return ventureCase.Assumptions.Single().Id;
+        return ventureCase.Assumptions.Last().Id;
     }
 }
 

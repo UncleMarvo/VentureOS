@@ -1,5 +1,11 @@
-﻿namespace VentureOS.Domain.Observations;
+﻿using System.Security.AccessControl;
+using VentureOS.Domain.Common;
+
+namespace VentureOS.Domain.Observations;
 
 public sealed record ObservationDraft(
+    string ObservationText,
     string Summary,
-    string Source);
+    string SourceReference,
+    ObservationSource ObservationSource,
+    Confidence Confidence);

@@ -5,6 +5,7 @@ using VentureOS.Domain.Evidence;
 using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Assumptions;
 using VentureOS.Domain.Challenges;
+using VentureOS.Domain.Decisions;
 
 namespace VentureOS.Domain.Cases;
 
@@ -15,6 +16,7 @@ public sealed class Case : AggregateRoot
     private readonly List<Hypothesis> _hypotheses = [];
     private readonly List<Assumption> _assumptions = [];
     private readonly List<Challenge> _challenges = [];
+    private readonly List<Decision> _decisions = [];
 
     private Case(
         Guid id,
@@ -50,6 +52,8 @@ public sealed class Case : AggregateRoot
     public IReadOnlyCollection<Assumption> Assumptions => _assumptions.AsReadOnly();
 
     public IReadOnlyCollection<Challenge> Challenges => _challenges.AsReadOnly();
+
+    public IReadOnlyCollection<Decision> Decisions => _decisions.AsReadOnly();
 
     public static Result<Case> Create(string title, string mission)
     {
@@ -385,5 +389,112 @@ public sealed class Case : AggregateRoot
             ChallengeTarget.Decision => false,
             _ => false
         };
+    }
+
+    // ============================
+    // DECISIONS
+    // ============================
+    public Result RecordDecision(DecisionDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result.Failure("Cannot record decisions for an archived case.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Question))
+        {
+            return Result.Failure("Decision question is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Rationale))
+        {
+            return Result.Failure("Decision rationale is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.ExpectedOutcome))
+        {
+            return Result.Failure("Decision expected outcome is required.");
+        }
+
+        if (draft.EvidenceIds.Count == 0)
+        {
+            return Result.Failure("Decision must reference at least one piece of evidence.");
+        }
+
+        if (draft.HypothesisIds.Count == 0)
+        {
+            return Result.Failure("Decision must reference at least one hypothesis.");
+        }
+
+        if (!AllEvidenceBelongsToCase(draft.EvidenceIds))
+        {
+            return Result.Failure("Decision cannot reference evidence that does not belong to the case.");
+        }
+
+        if (!AllAssumptionsBelongToCase(draft.AssumptionIds))
+        {
+            return Result.Failure("Decision cannot reference assumptions that do not belong to the case.");
+        }
+
+        if (!AllHypothesesBelongToCase(draft.HypothesisIds))
+        {
+            return Result.Failure("Decision cannot reference hypotheses that do not belong to the case.");
+        }
+
+        if (!AllChallengesBelongToCase(draft.ChallengeIds))
+        {
+            return Result.Failure("Decision cannot reference challenges that do not belong to the case.");
+        }
+
+        var decision = new Decision(
+            Guid.NewGuid(),
+            Id,
+            draft.Question.Trim(),
+            draft.Outcome,
+            draft.Rationale.Trim(),
+            draft.ExpectedOutcome.Trim(),
+            draft.Confidence,
+            draft.EvidenceIds.Distinct().ToArray(),
+            draft.AssumptionIds.Distinct().ToArray(),
+            draft.HypothesisIds.Distinct().ToArray(),
+            draft.ChallengeIds.Distinct().ToArray(),
+            DateTime.UtcNow);
+
+        _decisions.Add(decision);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new DecisionRecordedEvent(
+            Id,
+            decision.Id,
+            decision.Outcome,
+            decision.Question));
+
+        return Result.Success();
+    }
+
+    private bool AllEvidenceBelongsToCase(IReadOnlyCollection<Guid> evidenceIds)
+    {
+        var knownEvidenceIds = _evidence.Select(evidence => evidence.Id).ToHashSet();
+        return evidenceIds.All(knownEvidenceIds.Contains);
+    }
+
+    private bool AllAssumptionsBelongToCase(IReadOnlyCollection<Guid> assumptionIds)
+    {
+        var knownAssumptionIds = _assumptions.Select(assumption => assumption.Id).ToHashSet();
+        return assumptionIds.All(knownAssumptionIds.Contains);
+    }
+
+    private bool AllHypothesesBelongToCase(IReadOnlyCollection<Guid> hypothesisIds)
+    {
+        var knownHypothesisIds = _hypotheses.Select(hypothesis => hypothesis.Id).ToHashSet();
+        return hypothesisIds.All(knownHypothesisIds.Contains);
+    }
+
+    private bool AllChallengesBelongToCase(IReadOnlyCollection<Guid> challengeIds)
+    {
+        var knownChallengeIds = _challenges.Select(challenge => challenge.Id).ToHashSet();
+        return challengeIds.All(knownChallengeIds.Contains);
     }
 }
