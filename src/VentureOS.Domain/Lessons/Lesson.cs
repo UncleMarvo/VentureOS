@@ -32,4 +32,23 @@ public sealed class Lesson : Entity
     public IReadOnlyCollection<Guid> DecisionIds { get; }
 
     public DateTime CreatedAtUtc { get; }
+
+    public static Lesson Restore(
+        Guid id,
+        Guid caseId,
+        string summary,
+        string detail,
+        Confidence confidence,
+        IReadOnlyCollection<Guid> decisionIds,
+        DateTime createdAtUtc)
+    {
+        return new Lesson(
+            id,
+            caseId,
+            summary,
+            detail,
+            confidence,
+            decisionIds,
+            createdAtUtc);
+    }
 }

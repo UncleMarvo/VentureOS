@@ -52,4 +52,33 @@ public sealed class Decision : Entity
     public IReadOnlyCollection<Guid> ChallengeIds { get; }
 
     public DateTime CreatedAtUtc { get; }
+
+    public static Decision Restore(
+        Guid id,
+        Guid caseId,
+        string question,
+        DecisionOutcome outcome,
+        string rationale,
+        string expectedOutcome,
+        Confidence confidence,
+        IReadOnlyCollection<Guid> evidenceIds,
+        IReadOnlyCollection<Guid> assumptionIds,
+        IReadOnlyCollection<Guid> hypothesisIds,
+        IReadOnlyCollection<Guid> challengeIds,
+        DateTime createdAtUtc)
+    {
+        return new Decision(
+            id,
+            caseId,
+            question,
+            outcome,
+            rationale,
+            expectedOutcome,
+            confidence,
+            evidenceIds,
+            assumptionIds,
+            hypothesisIds,
+            challengeIds,
+            createdAtUtc);
+    }
 }

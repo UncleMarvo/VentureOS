@@ -51,6 +51,38 @@ public sealed class Hypothesis : Entity
 
     public DateTime UpdatedAtUtc { get; private set; }
 
+    public static Hypothesis Restore(
+        Guid id,
+        Guid caseId,
+        string statement,
+        string reasoning,
+        string expectedOutcome,
+        string successCriteria,
+        Confidence confidence,
+        IReadOnlyCollection<Guid> evidenceIds,
+        IReadOnlyCollection<Guid> assumptionIds,
+        HypothesisStatus status,
+        DateTime createdAtUtc,
+        DateTime updatedAtUtc)
+    {
+        var hypothesis = new Hypothesis(
+            id,
+            caseId,
+            statement,
+            reasoning,
+            expectedOutcome,
+            successCriteria,
+            confidence,
+            evidenceIds,
+            assumptionIds,
+            createdAtUtc);
+
+        hypothesis.Status = status;
+        hypothesis.UpdatedAtUtc = updatedAtUtc;
+
+        return hypothesis;
+    }
+
     public Result MarkSupported()
     {
         if (Status is HypothesisStatus.Rejected or HypothesisStatus.Superseded)

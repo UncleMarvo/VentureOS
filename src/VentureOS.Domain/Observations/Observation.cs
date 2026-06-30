@@ -1,5 +1,4 @@
-﻿using System.Security.AccessControl;
-using VentureOS.Domain.Common;
+﻿using VentureOS.Domain.Common;
 
 namespace VentureOS.Domain.Observations;
 
@@ -37,4 +36,25 @@ public sealed class Observation : Entity
     public Confidence Confidence { get; }
 
     public DateTime CreatedAtUtc { get; }
+
+    public static Observation Restore(
+        Guid id,
+        Guid caseId,
+        string observationText,
+        string summary,
+        string sourceReference,
+        ObservationSource observationSource,
+        Confidence confidence,
+        DateTime createdAtUtc)
+    {
+        return new Observation(
+            id,
+            caseId,
+            observationText,
+            summary,
+            sourceReference,
+            observationSource,
+            confidence,
+            createdAtUtc);
+    }
 }

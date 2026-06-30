@@ -36,4 +36,25 @@ public sealed class Challenge : Entity
     public Confidence Confidence { get; }
 
     public DateTime CreatedAtUtc { get; }
+
+    public static Challenge Restore(
+        Guid id,
+        Guid caseId,
+        ChallengeTarget target,
+        Guid targetId,
+        string statement,
+        string reasoning,
+        Confidence confidence,
+        DateTime createdAtUtc)
+    {
+        return new Challenge(
+            id,
+            caseId,
+            target,
+            targetId,
+            statement,
+            reasoning,
+            confidence,
+            createdAtUtc);
+    }
 }

@@ -34,4 +34,28 @@ public sealed class Assumption : Entity
     public DateTime CreatedAtUtc { get; }
 
     public DateTime UpdatedAtUtc { get; private set; }
+
+    public static Assumption Restore(
+        Guid id,
+        Guid caseId,
+        string statement,
+        string rationale,
+        Confidence confidence,
+        AssumptionStatus status,
+        DateTime createdAtUtc,
+        DateTime updatedAtUtc)
+    {
+        var assumption = new Assumption(
+            id,
+            caseId,
+            statement,
+            rationale,
+            confidence,
+            createdAtUtc);
+
+        assumption.Status = status;
+        assumption.UpdatedAtUtc = updatedAtUtc;
+
+        return assumption;
+    }
 }

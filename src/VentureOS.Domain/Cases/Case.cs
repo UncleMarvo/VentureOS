@@ -95,103 +95,36 @@ public sealed class Case : AggregateRoot
         return Result<Case>.Success(ventureCase);
     }
 
-    public static Case Rehydrate(CaseRehydrationState state)
+    public static Case Restore(
+        Guid id,
+        string title,
+        string mission,
+        CaseStatus status,
+        DateTime createdAtUtc,
+        DateTime updatedAtUtc,
+        IReadOnlyCollection<Observation> observations,
+        IReadOnlyCollection<Evidence.Evidence> evidence,
+        IReadOnlyCollection<Assumption> assumptions,
+        IReadOnlyCollection<Hypothesis> hypotheses,
+        IReadOnlyCollection<Challenge> challenges,
+        IReadOnlyCollection<Decision> decisions,
+        IReadOnlyCollection<Lesson> lessons)
     {
-        ArgumentNullException.ThrowIfNull(state);
-
         var ventureCase = new Case(
-            state.Id,
-            state.Title,
-            state.Mission,
-            state.Status,
-            state.CreatedAtUtc,
-            state.UpdatedAtUtc);
+            id,
+            title,
+            mission,
+            status,
+            createdAtUtc,
+            updatedAtUtc);
 
-        ventureCase._observations.AddRange(
-            state.Observations.Select(observation =>
-                new Observation(
-                    observation.Id,
-                    observation.CaseId,
-                    observation.ObservationText,
-                    observation.Summary,
-                    observation.SourceReference,
-                    observation.ObservationSource,
-                    observation.Confidence,
-                    observation.CreatedAtUtc)));
-
-        ventureCase._evidence.AddRange(
-            state.Evidence.Select(evidence =>
-                new Evidence.Evidence(
-                    evidence.Id,
-                    evidence.CaseId,
-                    evidence.Summary,
-                    evidence.Interpretation,
-                    evidence.Direction,
-                    evidence.ObservationIds,
-                    evidence.CreatedAtUtc)));
-
-        ventureCase._assumptions.AddRange(
-            state.Assumptions.Select(assumption =>
-                new Assumption(
-                    assumption.Id,
-                    assumption.CaseId,
-                    assumption.Statement,
-                    assumption.Rationale,
-                    assumption.Confidence,
-                    assumption.CreatedAtUtc)));
-
-        ventureCase._hypotheses.AddRange(
-            state.Hypotheses.Select(hypothesis =>
-                new Hypothesis(
-                    hypothesis.Id,
-                    hypothesis.CaseId,
-                    hypothesis.Statement,
-                    hypothesis.Reasoning,
-                    hypothesis.ExpectedOutcome,
-                    hypothesis.SuccessCriteria,
-                    hypothesis.Confidence,
-                    hypothesis.EvidenceIds,
-                    hypothesis.AssumptionIds,
-                    hypothesis.CreatedAtUtc)));
-
-        ventureCase._challenges.AddRange(
-            state.Challenges.Select(challenge =>
-                new Challenge(
-                    challenge.Id,
-                    challenge.CaseId,
-                    challenge.Target,
-                    challenge.TargetId,
-                    challenge.Statement,
-                    challenge.Reasoning,
-                    challenge.Confidence,
-                    challenge.CreatedAtUtc)));
-
-        ventureCase._decisions.AddRange(
-            state.Decisions.Select(decision =>
-                new Decision(
-                    decision.Id,
-                    decision.CaseId,
-                    decision.Question,
-                    decision.Outcome,
-                    decision.Rationale,
-                    decision.ExpectedOutcome,
-                    decision.Confidence,
-                    decision.EvidenceIds,
-                    decision.AssumptionIds,
-                    decision.HypothesisIds,
-                    decision.ChallengeIds,
-                    decision.CreatedAtUtc)));
-
-        ventureCase._lessons.AddRange(
-            state.Lessons.Select(lesson =>
-                new Lesson(
-                    lesson.Id,
-                    lesson.CaseId,
-                    lesson.Summary,
-                    lesson.Detail,
-                    lesson.Confidence,
-                    lesson.DecisionIds,
-                    lesson.CreatedAtUtc)));
+        ventureCase._observations.AddRange(observations);
+        ventureCase._evidence.AddRange(evidence);
+        ventureCase._assumptions.AddRange(assumptions);
+        ventureCase._hypotheses.AddRange(hypotheses);
+        ventureCase._challenges.AddRange(challenges);
+        ventureCase._decisions.AddRange(decisions);
+        ventureCase._lessons.AddRange(lessons);
 
         return ventureCase;
     }

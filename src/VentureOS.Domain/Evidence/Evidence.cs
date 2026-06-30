@@ -32,4 +32,23 @@ public sealed class Evidence : Entity
     public IReadOnlyCollection<Guid> ObservationIds { get; }
 
     public DateTime CreatedAtUtc { get; }
+
+    public static Evidence Restore(
+        Guid id,
+        Guid caseId,
+        string summary,
+        string interpretation,
+        EvidenceDirection direction,
+        IReadOnlyCollection<Guid> observationIds,
+        DateTime createdAtUtc)
+    {
+        return new Evidence(
+            id,
+            caseId,
+            summary,
+            interpretation,
+            direction,
+            observationIds,
+            createdAtUtc);
+    }
 }
