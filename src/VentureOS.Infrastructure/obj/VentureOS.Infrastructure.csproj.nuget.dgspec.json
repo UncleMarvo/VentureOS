@@ -193,6 +193,12 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
+          "dependencies": {
+            "DuckDB.NET.Data.Full": {
+              "target": "Package",
+              "version": "[1.5.3, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

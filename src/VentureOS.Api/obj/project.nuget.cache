@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "DYYrRV6bnDc=",
+  "dgSpecHash": "Qa+ZrJ9HIW4=",
   "success": true,
   "projectFilePath": "C:\\WORK\\VentureOS\\src\\VentureOS.Api\\VentureOS.Api.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\Eddie\\.nuget\\packages\\duckdb.net.bindings.full\\1.5.3\\duckdb.net.bindings.full.1.5.3.nupkg.sha512",
+    "C:\\Users\\Eddie\\.nuget\\packages\\duckdb.net.data.full\\1.5.3\\duckdb.net.data.full.1.5.3.nupkg.sha512",
     "C:\\Users\\Eddie\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.10\\microsoft.aspnetcore.openapi.9.0.10.nupkg.sha512",
     "C:\\Users\\Eddie\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
   ],

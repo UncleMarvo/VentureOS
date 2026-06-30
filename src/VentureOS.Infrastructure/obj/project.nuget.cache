@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "JuD7gsytyVs=",
+  "dgSpecHash": "dsj4N4+sl4g=",
   "success": true,
   "projectFilePath": "C:\\WORK\\VentureOS\\src\\VentureOS.Infrastructure\\VentureOS.Infrastructure.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\Eddie\\.nuget\\packages\\duckdb.net.bindings.full\\1.5.3\\duckdb.net.bindings.full.1.5.3.nupkg.sha512",
+    "C:\\Users\\Eddie\\.nuget\\packages\\duckdb.net.data.full\\1.5.3\\duckdb.net.data.full.1.5.3.nupkg.sha512"
+  ],
   "logs": []
 }

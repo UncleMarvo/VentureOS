@@ -2,6 +2,57 @@
   "version": 3,
   "targets": {
     "net9.0": {
+      "DuckDB.NET.Bindings.Full/1.5.3": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/DuckDB.NET.Bindings.dll": {
+            "related": ".pdb"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/DuckDB.NET.Bindings.dll": {
+            "related": ".pdb"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/linux-arm64/native/libduckdb.so": {
+            "assetType": "native",
+            "rid": "linux-arm64"
+          },
+          "runtimes/linux-x64/native/libduckdb.so": {
+            "assetType": "native",
+            "rid": "linux-x64"
+          },
+          "runtimes/osx/native/libduckdb.dylib": {
+            "assetType": "native",
+            "rid": "osx"
+          },
+          "runtimes/win-arm64/native/duckdb.dll": {
+            "assetType": "native",
+            "rid": "win-arm64"
+          },
+          "runtimes/win-x64/native/duckdb.dll": {
+            "assetType": "native",
+            "rid": "win-x64"
+          }
+        }
+      },
+      "DuckDB.NET.Data.Full/1.5.3": {
+        "type": "package",
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.5.3"
+        },
+        "compile": {
+          "lib/net8.0/DuckDB.NET.Data.dll": {
+            "related": ".pdb"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/DuckDB.NET.Data.dll": {
+            "related": ".pdb"
+          }
+        }
+      },
       "VentureOS.Application/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
@@ -28,6 +79,49 @@
     }
   },
   "libraries": {
+    "DuckDB.NET.Bindings.Full/1.5.3": {
+      "sha512": "3vkxzLkCmPUTRtEBBYrXvl9jOTXJ42uYswsokpysTulOS963ZIcMJRKpcHH2zwa63YI4YchjYvPz0pcR2Helbg==",
+      "type": "package",
+      "path": "duckdb.net.bindings.full/1.5.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE-DuckDB.txt",
+        "LICENSE.md",
+        "Logo.jpg",
+        "README.md",
+        "duckdb.net.bindings.full.1.5.3.nupkg.sha512",
+        "duckdb.net.bindings.full.nuspec",
+        "lib/net10.0/DuckDB.NET.Bindings.dll",
+        "lib/net10.0/DuckDB.NET.Bindings.pdb",
+        "lib/net8.0/DuckDB.NET.Bindings.dll",
+        "lib/net8.0/DuckDB.NET.Bindings.pdb",
+        "runtimes/linux-arm64/native/libduckdb.so",
+        "runtimes/linux-x64/native/libduckdb.so",
+        "runtimes/osx/native/libduckdb.dylib",
+        "runtimes/win-arm64/native/duckdb.dll",
+        "runtimes/win-x64/native/duckdb.dll"
+      ]
+    },
+    "DuckDB.NET.Data.Full/1.5.3": {
+      "sha512": "B0E3JH6nM9CeYLzmOIGGTz7R5vAKf10516Jiz7VnWj4kV7uMoh8m5mTB6IxTGFJMG6i6aOANwjwP7ud7kA87+Q==",
+      "type": "package",
+      "path": "duckdb.net.data.full/1.5.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE-DuckDB.txt",
+        "LICENSE.md",
+        "Logo.jpg",
+        "README.md",
+        "duckdb.net.data.full.1.5.3.nupkg.sha512",
+        "duckdb.net.data.full.nuspec",
+        "lib/net10.0/DuckDB.NET.Data.dll",
+        "lib/net10.0/DuckDB.NET.Data.pdb",
+        "lib/net8.0/DuckDB.NET.Data.dll",
+        "lib/net8.0/DuckDB.NET.Data.pdb"
+      ]
+    },
     "VentureOS.Application/1.0.0": {
       "type": "project",
       "path": "../VentureOS.Application/VentureOS.Application.csproj",
@@ -41,6 +135,7 @@
   },
   "projectFileDependencyGroups": {
     "net9.0": [
+      "DuckDB.NET.Data.Full >= 1.5.3",
       "VentureOS.Application >= 1.0.0",
       "VentureOS.Domain >= 1.0.0"
     ]
@@ -102,6 +197,12 @@
     "frameworks": {
       "net9.0": {
         "targetAlias": "net9.0",
+        "dependencies": {
+          "DuckDB.NET.Data.Full": {
+            "target": "Package",
+            "version": "[1.5.3, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

@@ -8,11 +8,58 @@
     ".NETCoreApp,Version=v9.0": {
       "VentureOS.Infrastructure/1.0.0": {
         "dependencies": {
+          "DuckDB.NET.Data.Full": "1.5.3",
           "VentureOS.Application": "1.0.0",
           "VentureOS.Domain": "1.0.0"
         },
         "runtime": {
           "VentureOS.Infrastructure.dll": {}
+        }
+      },
+      "DuckDB.NET.Bindings.Full/1.5.3": {
+        "runtime": {
+          "lib/net8.0/DuckDB.NET.Bindings.dll": {
+            "assemblyVersion": "1.5.3.0",
+            "fileVersion": "1.5.3.0"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/linux-arm64/native/libduckdb.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libduckdb.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx/native/libduckdb.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-arm64/native/duckdb.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "1.5.3.0"
+          },
+          "runtimes/win-x64/native/duckdb.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "1.5.3.0"
+          }
+        }
+      },
+      "DuckDB.NET.Data.Full/1.5.3": {
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.5.3"
+        },
+        "runtime": {
+          "lib/net8.0/DuckDB.NET.Data.dll": {
+            "assemblyVersion": "1.5.3.0",
+            "fileVersion": "1.5.3.0"
+          }
         }
       },
       "VentureOS.Application/1.0.0": {
@@ -41,6 +88,20 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "DuckDB.NET.Bindings.Full/1.5.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3vkxzLkCmPUTRtEBBYrXvl9jOTXJ42uYswsokpysTulOS963ZIcMJRKpcHH2zwa63YI4YchjYvPz0pcR2Helbg==",
+      "path": "duckdb.net.bindings.full/1.5.3",
+      "hashPath": "duckdb.net.bindings.full.1.5.3.nupkg.sha512"
+    },
+    "DuckDB.NET.Data.Full/1.5.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-B0E3JH6nM9CeYLzmOIGGTz7R5vAKf10516Jiz7VnWj4kV7uMoh8m5mTB6IxTGFJMG6i6aOANwjwP7ud7kA87+Q==",
+      "path": "duckdb.net.data.full/1.5.3",
+      "hashPath": "duckdb.net.data.full.1.5.3.nupkg.sha512"
     },
     "VentureOS.Application/1.0.0": {
       "type": "project",
