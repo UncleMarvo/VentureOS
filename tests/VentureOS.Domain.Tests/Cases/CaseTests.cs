@@ -628,12 +628,77 @@ public sealed class CaseTests
         Assert.IsType<AssumptionCreatedEvent>(domainEvent);
     }
 
+    [Fact]
+    public void CreateHypothesis_WithValidDraft_StoresAssumptionIds()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var assumptionId = CreateValidAssumption(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid hypothesis statement.",
+                "Valid hypothesis reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId],
+                [assumptionId]));
+
+        Assert.True(result.IsSuccess);
+
+        var hypothesis = Assert.Single(ventureCase.Hypotheses);
+
+        Assert.Contains(assumptionId, hypothesis.AssumptionIds);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithNoAssumptionIds_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid hypothesis statement.",
+                "Valid hypothesis reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis must reference at least one assumption.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithUnknownAssumptionId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid hypothesis statement.",
+                "Valid hypothesis reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId],
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis cannot reference assumptions that do not belong to the case.", result.Error);
+    }
+
     // ==================================
     // HELPER METHODS
     // ==================================
     private static Hypothesis CreateValidHypothesis(Case ventureCase)
     {
         var evidenceId = CreateValidEvidence(ventureCase);
+        var assumptionId = CreateValidAssumption(ventureCase);
 
         ventureCase.CreateHypothesis(
             new HypothesisDraft(
@@ -642,7 +707,8 @@ public sealed class CaseTests
                 "Valid expected outcome.",
                 "Valid success criteria.",
                 Confidence.FromPercentage(60),
-                [evidenceId]));
+                [evidenceId],
+                [assumptionId]));
 
         return ventureCase.Hypotheses.Single();
     }
@@ -667,6 +733,17 @@ public sealed class CaseTests
                 [observationId]));
 
         return ventureCase.Evidence.Single().Id;
+    }
+
+    private static Guid CreateValidAssumption(Case ventureCase)
+    {
+        ventureCase.CreateAssumption(
+            new AssumptionDraft(
+                "Users are willing to pay for the proposed solution.",
+                "The problem appears recurring and costly enough to justify paid automation.",
+                Confidence.FromPercentage(55)));
+
+        return ventureCase.Assumptions.Single().Id;
     }
 }
 

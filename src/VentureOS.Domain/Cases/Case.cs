@@ -231,6 +231,11 @@ public sealed class Case : AggregateRoot
             return Result.Failure("Hypothesis must reference at least one piece of evidence.");
         }
 
+        if (draft.AssumptionIds.Count == 0)
+        {
+            return Result.Failure("Hypothesis must reference at least one assumption.");
+        }
+
         var knownEvidenceIds = _evidence.Select(evidence => evidence.Id).ToHashSet();
 
         var unknownEvidenceIds = draft.EvidenceIds
@@ -242,6 +247,17 @@ public sealed class Case : AggregateRoot
             return Result.Failure("Hypothesis cannot reference evidence that does not belong to the case.");
         }
 
+        var knownAssumptionIds = _assumptions.Select(assumption => assumption.Id).ToHashSet();
+
+        var unknownAssumptionIds = draft.AssumptionIds
+            .Where(assumptionId => !knownAssumptionIds.Contains(assumptionId))
+            .ToArray();
+
+        if (unknownAssumptionIds.Length > 0)
+        {
+            return Result.Failure("Hypothesis cannot reference assumptions that do not belong to the case.");
+        }
+
         var hypothesis = new Hypothesis(
             Guid.NewGuid(),
             Id,
@@ -251,6 +267,7 @@ public sealed class Case : AggregateRoot
             draft.SuccessCriteria.Trim(),
             draft.Confidence,
             draft.EvidenceIds.Distinct().ToArray(),
+            draft.AssumptionIds.Distinct().ToArray(),
             DateTime.UtcNow);
 
         _hypotheses.Add(hypothesis);

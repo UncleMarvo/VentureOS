@@ -8,4 +8,5 @@ public sealed record HypothesisDraft(
     string ExpectedOutcome,
     string SuccessCriteria,
     Confidence Confidence,
-    IReadOnlyCollection<Guid> EvidenceIds);
+    IReadOnlyCollection<Guid> EvidenceIds,
+    IReadOnlyCollection<Guid> AssumptionIds);

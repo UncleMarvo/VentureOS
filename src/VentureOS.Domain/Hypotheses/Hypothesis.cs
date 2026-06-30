@@ -13,6 +13,7 @@ public sealed class Hypothesis : Entity
         string successCriteria,
         Confidence confidence,
         IReadOnlyCollection<Guid> evidenceIds,
+        IReadOnlyCollection<Guid> assumptionIds,
         DateTime createdAtUtc) : base(id)
     {
         CaseId = caseId;
@@ -22,6 +23,7 @@ public sealed class Hypothesis : Entity
         SuccessCriteria = successCriteria;
         Confidence = confidence;
         EvidenceIds = evidenceIds;
+        AssumptionIds = assumptionIds;
         Status = HypothesisStatus.Proposed;
         CreatedAtUtc = createdAtUtc;
         UpdatedAtUtc = createdAtUtc;
@@ -40,6 +42,8 @@ public sealed class Hypothesis : Entity
     public Confidence Confidence { get; }
 
     public IReadOnlyCollection<Guid> EvidenceIds { get; }
+
+    public IReadOnlyCollection<Guid> AssumptionIds { get; }
 
     public HypothesisStatus Status { get; private set; }
 
