@@ -26,6 +26,33 @@ The objective is progressively reducing uncertainty through disciplined reasonin
 
 ---
 
+# Information Flow Principle
+
+Every external input enters VentureOS as an Observation.
+
+Every conclusion leaves VentureOS as a Decision.
+
+Everything else is transformation.
+
+This means:
+
+- notes become Observations
+- documents become Observations
+- web pages become Observations
+- interviews become Observations
+- previous case findings become Observations
+- AI-generated summaries become Observations
+
+Observations may become Evidence.
+
+Evidence and Assumptions may support Hypotheses.
+
+Hypotheses may be challenged, revised, accepted, rejected, or escalated into Decisions.
+
+This preserves a traceable chain of reasoning from raw input to final decision.
+
+---
+
 # The Lifecycle
 
 ```text
