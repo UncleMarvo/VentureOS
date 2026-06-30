@@ -67,7 +67,15 @@ Capture risks identified during venture evaluation and link them to supporting e
 
 ---
 
-### TASK-0009 — Decision
+### TASK-0009 — Challenge
+
+Purpose:
+
+Allow VentureOS to preserve constructive objections against hypotheses, assumptions, evidence, risks, or decisions.
+
+---
+
+### TASK-0010 — Decision
 
 Purpose:
 
@@ -75,7 +83,7 @@ Record board decisions together with rationale, supporting evidence, objections,
 
 ---
 
-### TASK-0010 — Lesson
+### TASK-0011 — Lesson
 
 Purpose:
 
