@@ -40,9 +40,7 @@ public sealed class CreateAssumptionHandler
                 createAssumptionResult.Error ?? "Assumption could not be created.");
         }
 
-        var assumption = ventureCase.Assumptions
-            .OrderByDescending(item => item.CreatedAtUtc)
-            .First();
+        var assumption = createAssumptionResult.Value;
 
         await _caseRepository.UpdateAsync(ventureCase, cancellationToken);
 

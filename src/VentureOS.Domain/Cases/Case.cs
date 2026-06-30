@@ -8,12 +8,14 @@ using VentureOS.Domain.Challenges;
 using VentureOS.Domain.Decisions;
 using VentureOS.Domain.Lessons;
 
+using EvidenceEntity = VentureOS.Domain.Evidence.Evidence;
+
 namespace VentureOS.Domain.Cases;
 
 public sealed class Case : AggregateRoot
 {
     private readonly List<Observation> _observations = [];
-    private readonly List<Evidence.Evidence> _evidence = [];
+    private readonly List<EvidenceEntity> _evidence = [];
     private readonly List<Hypothesis> _hypotheses = [];
     private readonly List<Assumption> _assumptions = [];
     private readonly List<Challenge> _challenges = [];
@@ -158,28 +160,28 @@ public sealed class Case : AggregateRoot
     // ============================
     // OBSERVATIONS
     // ============================
-    public Result AddObservation(ObservationDraft draft)
+    public Result<Observation> AddObservation(ObservationDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
         if (Status == CaseStatus.Archived)
         {
-            return Result.Failure("Cannot add observations to an archived case.");
+            return Result<Observation>.Failure("Cannot add observations to an archived case.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.ObservationText))
         {
-            return Result.Failure("Observation text is required.");
+            return Result<Observation>.Failure("Observation text is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Summary))
         {
-            return Result.Failure("Observation summary is required.");
+            return Result<Observation>.Failure("Observation summary is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.SourceReference))
         {
-            return Result.Failure("Observation source is required.");
+            return Result<Observation>.Failure("Observation source is required.");
         }
 
         var observation = new Observation(
@@ -197,34 +199,34 @@ public sealed class Case : AggregateRoot
 
         AddDomainEvent(new ObservationAddedEvent(Id, observation.Id, observation.Summary));
 
-        return Result.Success();
+        return Result<Observation>.Success(observation);
     }
 
     // ============================
     // EVIDENCE
     // ============================
-    public Result CreateEvidence(EvidenceDraft draft)
+    public Result<EvidenceEntity> CreateEvidence(EvidenceDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
         if (Status == CaseStatus.Archived)
         {
-            return Result.Failure("Cannot create evidence for an archived case.");
+            return Result<EvidenceEntity>.Failure("Cannot create evidence for an archived case.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Summary))
         {
-            return Result.Failure("Evidence summary is required.");
+            return Result<EvidenceEntity>.Failure("Evidence summary is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Interpretation))
         {
-            return Result.Failure("Evidence interpretation is required.");
+            return Result<EvidenceEntity>.Failure("Evidence interpretation is required.");
         }
 
         if (draft.ObservationIds.Count == 0)
         {
-            return Result.Failure("Evidence must reference at least one observation.");
+            return Result<EvidenceEntity>.Failure("Evidence must reference at least one observation.");
         }
 
         var knownObservationIds = _observations.Select(observation => observation.Id).ToHashSet();
@@ -235,7 +237,7 @@ public sealed class Case : AggregateRoot
 
         if (unknownObservationIds.Length > 0)
         {
-            return Result.Failure("Evidence cannot reference observations that do not belong to the case.");
+            return Result<EvidenceEntity>.Failure("Evidence cannot reference observations that do not belong to the case.");
         }
 
         var evidence = new Evidence.Evidence(
@@ -252,49 +254,49 @@ public sealed class Case : AggregateRoot
 
         AddDomainEvent(new EvidenceCreatedEvent(Id, evidence.Id, evidence.Direction, evidence.Summary));
 
-        return Result.Success();
+        return Result<EvidenceEntity>.Success(evidence);
     }
 
     // ============================
     // HYPOTHESIS
     // ============================
-    public Result CreateHypothesis(HypothesisDraft draft)
+    public Result<Hypothesis> CreateHypothesis(HypothesisDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
         if (Status == CaseStatus.Archived)
         {
-            return Result.Failure("Cannot create hypotheses for an archived case.");
+            return Result<Hypothesis>.Failure("Cannot create hypotheses for an archived case.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Statement))
         {
-            return Result.Failure("Hypothesis statement is required.");
+            return Result<Hypothesis>.Failure("Hypothesis statement is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Reasoning))
         {
-            return Result.Failure("Hypothesis reasoning is required.");
+            return Result<Hypothesis>.Failure("Hypothesis reasoning is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.ExpectedOutcome))
         {
-            return Result.Failure("Hypothesis expected outcome is required.");
+            return Result<Hypothesis>.Failure("Hypothesis expected outcome is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.SuccessCriteria))
         {
-            return Result.Failure("Hypothesis success criteria is required.");
+            return Result<Hypothesis>.Failure("Hypothesis success criteria is required.");
         }
 
         if (draft.EvidenceIds.Count == 0)
         {
-            return Result.Failure("Hypothesis must reference at least one piece of evidence.");
+            return Result<Hypothesis>.Failure("Hypothesis must reference at least one piece of evidence.");
         }
 
         if (draft.AssumptionIds.Count == 0)
         {
-            return Result.Failure("Hypothesis must reference at least one assumption.");
+            return Result<Hypothesis>.Failure("Hypothesis must reference at least one assumption.");
         }
 
         var knownEvidenceIds = _evidence.Select(evidence => evidence.Id).ToHashSet();
@@ -305,7 +307,7 @@ public sealed class Case : AggregateRoot
 
         if (unknownEvidenceIds.Length > 0)
         {
-            return Result.Failure("Hypothesis cannot reference evidence that does not belong to the case.");
+            return Result<Hypothesis>.Failure("Hypothesis cannot reference evidence that does not belong to the case.");
         }
 
         var knownAssumptionIds = _assumptions.Select(assumption => assumption.Id).ToHashSet();
@@ -316,7 +318,7 @@ public sealed class Case : AggregateRoot
 
         if (unknownAssumptionIds.Length > 0)
         {
-            return Result.Failure("Hypothesis cannot reference assumptions that do not belong to the case.");
+            return Result<Hypothesis>.Failure("Hypothesis cannot reference assumptions that do not belong to the case.");
         }
 
         var hypothesis = new Hypothesis(
@@ -336,29 +338,29 @@ public sealed class Case : AggregateRoot
 
         AddDomainEvent(new HypothesisCreatedEvent(Id, hypothesis.Id, hypothesis.Statement));
 
-        return Result.Success();
+        return Result<Hypothesis>.Success(hypothesis);
     }
 
     // ============================
     // ASSUMPTIONS
     // ============================
-    public Result CreateAssumption(AssumptionDraft draft)
+    public Result<Assumption> CreateAssumption(AssumptionDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
         if (Status == CaseStatus.Archived)
         {
-            return Result.Failure("Cannot create assumptions for an archived case.");
+            return Result<Assumption>.Failure("Cannot create assumptions for an archived case.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Statement))
         {
-            return Result.Failure("Assumption statement is required.");
+            return Result<Assumption>.Failure("Assumption statement is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Rationale))
         {
-            return Result.Failure("Assumption rationale is required.");
+            return Result<Assumption>.Failure("Assumption rationale is required.");
         }
 
         var assumption = new Assumption(
@@ -374,39 +376,39 @@ public sealed class Case : AggregateRoot
 
         AddDomainEvent(new AssumptionCreatedEvent(Id, assumption.Id, assumption.Statement));
 
-        return Result.Success();
+        return Result<Assumption>.Success(assumption);
     }
 
     // ============================
     // CHALLENGES
     // ============================
-    public Result RaiseChallenge(ChallengeDraft draft)
+    public Result<Challenge> RaiseChallenge(ChallengeDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
         if (Status == CaseStatus.Archived)
         {
-            return Result.Failure("Cannot raise challenges for an archived case.");
+            return Result<Challenge>.Failure("Cannot raise challenges for an archived case.");
         }
 
         if (draft.TargetId == Guid.Empty)
         {
-            return Result.Failure("Challenge target ID is required.");
+            return Result<Challenge>.Failure("Challenge target ID is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Statement))
         {
-            return Result.Failure("Challenge statement is required.");
+            return Result<Challenge>.Failure("Challenge statement is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Reasoning))
         {
-            return Result.Failure("Challenge reasoning is required.");
+            return Result<Challenge>.Failure("Challenge reasoning is required.");
         }
 
         if (!TargetExists(draft.Target, draft.TargetId))
         {
-            return Result.Failure("Challenge target does not belong to the case.");
+            return Result<Challenge>.Failure("Challenge target does not belong to the case.");
         }
 
         var challenge = new Challenge(
@@ -429,7 +431,7 @@ public sealed class Case : AggregateRoot
             challenge.TargetId,
             challenge.Statement));
 
-        return Result.Success();
+        return Result<Challenge>.Success(challenge);
     }
 
     private bool TargetExists(ChallengeTarget target, Guid targetId)
@@ -447,58 +449,58 @@ public sealed class Case : AggregateRoot
     // ============================
     // DECISIONS
     // ============================
-    public Result RecordDecision(DecisionDraft draft)
+    public Result<Decision> RecordDecision(DecisionDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
         if (Status == CaseStatus.Archived)
         {
-            return Result.Failure("Cannot record decisions for an archived case.");
+            return Result<Decision>.Failure("Cannot record decisions for an archived case.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Question))
         {
-            return Result.Failure("Decision question is required.");
+            return Result<Decision>.Failure("Decision question is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Rationale))
         {
-            return Result.Failure("Decision rationale is required.");
+            return Result<Decision>.Failure("Decision rationale is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.ExpectedOutcome))
         {
-            return Result.Failure("Decision expected outcome is required.");
+            return Result<Decision>.Failure("Decision expected outcome is required.");
         }
 
         if (draft.EvidenceIds.Count == 0)
         {
-            return Result.Failure("Decision must reference at least one piece of evidence.");
+            return Result<Decision>.Failure("Decision must reference at least one piece of evidence.");
         }
 
         if (draft.HypothesisIds.Count == 0)
         {
-            return Result.Failure("Decision must reference at least one hypothesis.");
+            return Result<Decision>.Failure("Decision must reference at least one hypothesis.");
         }
 
         if (!AllEvidenceBelongsToCase(draft.EvidenceIds))
         {
-            return Result.Failure("Decision cannot reference evidence that does not belong to the case.");
+            return Result<Decision>.Failure("Decision cannot reference evidence that does not belong to the case.");
         }
 
         if (!AllAssumptionsBelongToCase(draft.AssumptionIds))
         {
-            return Result.Failure("Decision cannot reference assumptions that do not belong to the case.");
+            return Result<Decision>.Failure("Decision cannot reference assumptions that do not belong to the case.");
         }
 
         if (!AllHypothesesBelongToCase(draft.HypothesisIds))
         {
-            return Result.Failure("Decision cannot reference hypotheses that do not belong to the case.");
+            return Result<Decision>.Failure("Decision cannot reference hypotheses that do not belong to the case.");
         }
 
         if (!AllChallengesBelongToCase(draft.ChallengeIds))
         {
-            return Result.Failure("Decision cannot reference challenges that do not belong to the case.");
+            return Result<Decision>.Failure("Decision cannot reference challenges that do not belong to the case.");
         }
 
         var decision = new Decision(
@@ -524,7 +526,7 @@ public sealed class Case : AggregateRoot
             decision.Outcome,
             decision.Question));
 
-        return Result.Success();
+        return Result<Decision>.Success(decision);
     }
 
     private bool AllEvidenceBelongsToCase(IReadOnlyCollection<Guid> evidenceIds)
@@ -554,33 +556,33 @@ public sealed class Case : AggregateRoot
     // ============================
     // LESSONS
     // ============================
-    public Result RecordLesson(LessonDraft draft)
+    public Result<Lesson> RecordLesson(LessonDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
 
         if (Status == CaseStatus.Archived)
         {
-            return Result.Failure("Cannot record lessons for an archived case.");
+            return Result<Lesson>.Failure("Cannot record lessons for an archived case.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Summary))
         {
-            return Result.Failure("Lesson summary is required.");
+            return Result<Lesson>.Failure("Lesson summary is required.");
         }
 
         if (string.IsNullOrWhiteSpace(draft.Detail))
         {
-            return Result.Failure("Lesson detail is required.");
+            return Result<Lesson>.Failure("Lesson detail is required.");
         }
 
         if (draft.DecisionIds.Count == 0)
         {
-            return Result.Failure("Lesson must reference at least one decision.");
+            return Result<Lesson>.Failure("Lesson must reference at least one decision.");
         }
 
         if (!AllDecisionsBelongToCase(draft.DecisionIds))
         {
-            return Result.Failure("Lesson cannot reference decisions that do not belong to the case.");
+            return Result<Lesson>.Failure("Lesson cannot reference decisions that do not belong to the case.");
         }
 
         var lesson = new Lesson(
@@ -600,7 +602,7 @@ public sealed class Case : AggregateRoot
             lesson.Id,
             lesson.Summary));
 
-        return Result.Success();
+        return Result<Lesson>.Success(lesson);
     }
 
     private bool AllDecisionsBelongToCase(IReadOnlyCollection<Guid> decisionIds)

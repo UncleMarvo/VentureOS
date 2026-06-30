@@ -44,9 +44,7 @@ public sealed class CreateHypothesisHandler
                 createHypothesisResult.Error ?? "Hypothesis could not be created.");
         }
 
-        var hypothesis = ventureCase.Hypotheses
-            .OrderByDescending(item => item.CreatedAtUtc)
-            .First();
+        var hypothesis = createHypothesisResult.Value;
 
         await _caseRepository.UpdateAsync(ventureCase, cancellationToken);
 

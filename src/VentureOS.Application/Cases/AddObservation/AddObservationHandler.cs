@@ -42,11 +42,11 @@ public sealed class AddObservationHandler
                 addObservationResult.Error ?? "Observation could not be added.");
         }
 
-        var observation = ventureCase.Observations
-            .OrderByDescending(item => item.CreatedAtUtc)
-            .First();
+        var observation = addObservationResult.Value;
 
-        await _caseRepository.UpdateAsync(ventureCase, cancellationToken);
+        await _caseRepository.UpdateAsync(
+            ventureCase, 
+            cancellationToken);
 
         return Result<AddObservationResult>.Success(
             new AddObservationResult(

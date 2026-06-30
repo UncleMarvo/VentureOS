@@ -42,9 +42,7 @@ public sealed class RaiseChallengeHandler
                 raiseChallengeResult.Error ?? "Challenge could not be raised.");
         }
 
-        var challenge = ventureCase.Challenges
-            .OrderByDescending(item => item.CreatedAtUtc)
-            .First();
+        var challenge = raiseChallengeResult.Value;
 
         await _caseRepository.UpdateAsync(ventureCase, cancellationToken);
 

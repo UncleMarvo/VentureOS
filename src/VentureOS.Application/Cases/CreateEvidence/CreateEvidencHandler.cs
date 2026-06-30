@@ -41,9 +41,7 @@ public sealed class CreateEvidenceHandler
                 createEvidenceResult.Error ?? "Evidence could not be created.");
         }
 
-        var evidence = ventureCase.Evidence
-            .OrderByDescending(item => item.CreatedAtUtc)
-            .First();
+        var evidence = createEvidenceResult.Value;
 
         await _caseRepository.UpdateAsync(ventureCase, cancellationToken);
 

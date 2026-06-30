@@ -46,9 +46,7 @@ public sealed class RecordDecisionHandler
                 recordDecisionResult.Error ?? "Decision could not be recorded.");
         }
 
-        var decision = ventureCase.Decisions
-            .OrderByDescending(item => item.CreatedAtUtc)
-            .First();
+        var decision = recordDecisionResult.Value;
 
         await _caseRepository.UpdateAsync(
             ventureCase,

@@ -41,9 +41,7 @@ public sealed class RecordLessonHandler
                 recordLessonResult.Error ?? "Lesson could not be recorded.");
         }
 
-        var lesson = ventureCase.Lessons
-            .OrderByDescending(item => item.CreatedAtUtc)
-            .First();
+        var lesson = recordLessonResult.Value;
 
         await _caseRepository.UpdateAsync(
             ventureCase,
