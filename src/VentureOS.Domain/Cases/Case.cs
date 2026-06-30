@@ -2,6 +2,7 @@
 using VentureOS.Domain.Common;
 using VentureOS.Domain.Observations;
 using VentureOS.Domain.Evidence;
+using VentureOS.Domain.Hypotheses;
 
 namespace VentureOS.Domain.Cases;
 
@@ -9,6 +10,7 @@ public sealed class Case : AggregateRoot
 {
     private readonly List<Observation> _observations = [];
     private readonly List<Evidence.Evidence> _evidence = [];
+    private readonly List<Hypothesis> _hypotheses = [];
 
     private Case(
         Guid id,
@@ -39,6 +41,8 @@ public sealed class Case : AggregateRoot
 
     public IReadOnlyCollection<Evidence.Evidence> Evidence => _evidence.AsReadOnly();
 
+    public IReadOnlyCollection<Hypothesis> Hypotheses => _hypotheses.AsReadOnly();
+
     public static Result<Case> Create(string title, string mission)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -58,40 +62,6 @@ public sealed class Case : AggregateRoot
             DateTime.UtcNow);
 
         return Result<Case>.Success(ventureCase);
-    }
-
-    public Result AddObservation(ObservationDraft draft)
-    {
-        ArgumentNullException.ThrowIfNull(draft);
-
-        if (Status == CaseStatus.Archived)
-        {
-            return Result.Failure("Cannot add observations to an archived case.");
-        }
-
-        if (string.IsNullOrWhiteSpace(draft.Summary))
-        {
-            return Result.Failure("Observation summary is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(draft.Source))
-        {
-            return Result.Failure("Observation source is required.");
-        }
-
-        var observation = new Observation(
-            Guid.NewGuid(),
-            Id,
-            draft.Summary.Trim(),
-            draft.Source.Trim(),
-            DateTime.UtcNow);
-
-        _observations.Add(observation);
-        UpdatedAtUtc = DateTime.UtcNow;
-
-        AddDomainEvent(new ObservationAddedEvent(Id, observation.Id, observation.Summary));
-
-        return Result.Success();
     }
 
     public Result Activate()
@@ -120,6 +90,54 @@ public sealed class Case : AggregateRoot
         return Result.Success();
     }
 
+    // ============================
+    // OBSERVATIONS
+    // ============================
+    public Result AddObservation(ObservationDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result.Failure("Cannot add observations to an archived case.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.ObservationText))
+        {
+            return Result.Failure("Observation text is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Summary))
+        {
+            return Result.Failure("Observation summary is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.SourceReference))
+        {
+            return Result.Failure("Observation source is required.");
+        }
+
+        var observation = new Observation(
+            Guid.NewGuid(),
+            Id,
+            draft.ObservationText.Trim(),
+            draft.Summary.Trim(),
+            draft.SourceReference.Trim(),
+            draft.ObservationSource,
+            draft.Confidence,
+            DateTime.UtcNow);
+
+        _observations.Add(observation);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new ObservationAddedEvent(Id, observation.Id, observation.Summary));
+
+        return Result.Success();
+    }
+
+    // ============================
+    // EVIDENCE
+    // ============================
     public Result CreateEvidence(EvidenceDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
@@ -168,6 +186,73 @@ public sealed class Case : AggregateRoot
         UpdatedAtUtc = DateTime.UtcNow;
 
         AddDomainEvent(new EvidenceCreatedEvent(Id, evidence.Id, evidence.Direction, evidence.Summary));
+
+        return Result.Success();
+    }
+
+    // ============================
+    // HYPOTHESIS
+    // ============================
+    public Result CreateHypothesis(HypothesisDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result.Failure("Cannot create hypotheses for an archived case.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Statement))
+        {
+            return Result.Failure("Hypothesis statement is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Reasoning))
+        {
+            return Result.Failure("Hypothesis reasoning is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.ExpectedOutcome))
+        {
+            return Result.Failure("Hypothesis expected outcome is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.SuccessCriteria))
+        {
+            return Result.Failure("Hypothesis success criteria is required.");
+        }
+
+        if (draft.EvidenceIds.Count == 0)
+        {
+            return Result.Failure("Hypothesis must reference at least one piece of evidence.");
+        }
+
+        var knownEvidenceIds = _evidence.Select(evidence => evidence.Id).ToHashSet();
+
+        var unknownEvidenceIds = draft.EvidenceIds
+            .Where(evidenceId => !knownEvidenceIds.Contains(evidenceId))
+            .ToArray();
+
+        if (unknownEvidenceIds.Length > 0)
+        {
+            return Result.Failure("Hypothesis cannot reference evidence that does not belong to the case.");
+        }
+
+        var hypothesis = new Hypothesis(
+            Guid.NewGuid(),
+            Id,
+            draft.Statement.Trim(),
+            draft.Reasoning.Trim(),
+            draft.ExpectedOutcome.Trim(),
+            draft.SuccessCriteria.Trim(),
+            draft.Confidence,
+            draft.EvidenceIds.Distinct().ToArray(),
+            DateTime.UtcNow);
+
+        _hypotheses.Add(hypothesis);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new HypothesisCreatedEvent(Id, hypothesis.Id, hypothesis.Statement));
 
         return Result.Success();
     }

@@ -1,7 +1,10 @@
-﻿using VentureOS.Domain.Cases;
+using System.Security.AccessControl;
+using VentureOS.Domain.Cases;
 using VentureOS.Domain.Cases.Events;
-using VentureOS.Domain.Observations;
+using VentureOS.Domain.Common;
 using VentureOS.Domain.Evidence;
+using VentureOS.Domain.Observations;
+using VentureOS.Domain.Hypotheses;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -93,16 +96,39 @@ public sealed class CaseTests
 
         var result = ventureCase.AddObservation(
             new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
                 "Accountants report spending time chasing client documents.",
-                "Manual research note"));
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         Assert.True(result.IsSuccess);
 
         var observation = Assert.Single(ventureCase.Observations);
 
         Assert.Equal(ventureCase.Id, observation.CaseId);
+        Assert.Equal("Every month-end I spend half my Friday chasing invoices.", observation.ObservationText);
         Assert.Equal("Accountants report spending time chasing client documents.", observation.Summary);
-        Assert.Equal("Manual research note", observation.Source);
+        Assert.Equal("Manual research note", observation.SourceReference);
+        Assert.Equal(ObservationSource.ManualNote, observation.ObservationSource);
+        Assert.Equal(80, observation.Confidence.Value);
+    }
+
+    [Fact]
+    public void AddObservation_WithEmptyText_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.AddObservation(
+            new ObservationDraft(
+                "",
+                "Valid observation.",
+                "Manual Research Note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Observation text is required.", result.Error);
     }
 
     [Fact]
@@ -112,8 +138,11 @@ public sealed class CaseTests
 
         var result = ventureCase.AddObservation(
             new ObservationDraft(
-                "", 
-                "Manual research note"));
+                "Every month-end I spend half my Friday chasing invoices.",
+                "",
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         Assert.True(result.IsFailure);
         Assert.Equal("Observation summary is required.", result.Error);
@@ -126,8 +155,11 @@ public sealed class CaseTests
 
         var result = ventureCase.AddObservation(
             new ObservationDraft(
-                "Valid observation.", 
-                ""));
+                "Every month-end I spend half my Friday chasing invoices.",
+                "Valid observation.",
+                "",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         Assert.True(result.IsFailure);
         Assert.Equal("Observation source is required.", result.Error);
@@ -141,8 +173,11 @@ public sealed class CaseTests
 
         var result = ventureCase.AddObservation(
             new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
                 "Valid observation.",
-                "Manual research note"));
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         Assert.True(result.IsFailure);
         Assert.Equal("Cannot add observations to an archived case.", result.Error);
@@ -157,8 +192,11 @@ public sealed class CaseTests
 
         var result = ventureCase.AddObservation(
             new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
                 "Valid observation.",
-                "Manual research note"));
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         Assert.True(result.IsSuccess);
 
@@ -178,8 +216,11 @@ public sealed class CaseTests
 
         ventureCase.AddObservation(
             new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
                 "Accountants report spending time chasing client documents.",
-                "Manual research note"));
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         var observationId = ventureCase.Observations.Single().Id;
 
@@ -207,7 +248,12 @@ public sealed class CaseTests
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
 
         ventureCase.AddObservation(
-            new ObservationDraft("Valid observation.", "Manual research note"));
+            new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
+                "Valid observation.",
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         var observationId = ventureCase.Observations.Single().Id;
 
@@ -228,7 +274,12 @@ public sealed class CaseTests
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
 
         ventureCase.AddObservation(
-            new ObservationDraft("Valid observation.", "Manual research note"));
+            new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
+                "Valid observation.",
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         var observationId = ventureCase.Observations.Single().Id;
 
@@ -298,7 +349,12 @@ public sealed class CaseTests
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
 
         ventureCase.AddObservation(
-            new ObservationDraft("Valid observation.", "Manual research note"));
+            new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
+                "Valid observation.",
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         var observationId = ventureCase.Observations.Single().Id;
 
@@ -322,7 +378,12 @@ public sealed class CaseTests
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
 
         ventureCase.AddObservation(
-            new ObservationDraft("Valid observation.", "Manual research note"));
+            new ObservationDraft(
+                "Every month-end I spend half my Friday chasing invoices.",
+                "Valid observation.",
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
 
         var observationId = ventureCase.Observations.Single().Id;
 
@@ -340,5 +401,255 @@ public sealed class CaseTests
         var domainEvent = Assert.Single(ventureCase.DomainEvents);
 
         Assert.IsType<EvidenceCreatedEvent>(domainEvent);
+    }
+
+
+    // =========================
+    // HYPOTHESIS TESTS
+    // =========================
+    [Fact]
+    public void CreateHypothesis_WithValidDraft_CreatesHypothesis()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.AddObservation(
+            new ObservationDraft(
+                "Every month-end I spend half my Friday chasing missing invoices from clients.",
+                "Accountants spend significant time collecting invoices.",
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
+
+        var observationId = ventureCase.Observations.Single().Id;
+
+        ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Document chasing appears to be a repeated admin burden.",
+                "The observation suggests recurring administrative friction around collecting documents.",
+                EvidenceDirection.Supports,
+                [observationId]));
+
+        var evidenceId = ventureCase.Evidence.Single().Id;
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Small accounting firms will pay for automated client document chasing.",
+                "Evidence suggests document collection creates recurring administrative friction.",
+                "At least some small accounting firms express willingness to evaluate an automation tool.",
+                "Interview or landing page evidence shows measurable interest from target firms.",
+                Confidence.FromPercentage(65),
+                [evidenceId]));
+
+        Assert.True(result.IsSuccess);
+
+        var hypothesis = Assert.Single(ventureCase.Hypotheses);
+
+        Assert.Equal(ventureCase.Id, hypothesis.CaseId);
+        Assert.Equal("Small accounting firms will pay for automated client document chasing.", hypothesis.Statement);
+        Assert.Equal("Evidence suggests document collection creates recurring administrative friction.", hypothesis.Reasoning);
+        Assert.Equal("At least some small accounting firms express willingness to evaluate an automation tool.", hypothesis.ExpectedOutcome);
+        Assert.Equal("Interview or landing page evidence shows measurable interest from target firms.", hypothesis.SuccessCriteria);
+        Assert.Equal(65, hypothesis.Confidence.Value);
+        Assert.Equal(HypothesisStatus.Proposed, hypothesis.Status);
+        Assert.Contains(evidenceId, hypothesis.EvidenceIds);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithEmptyStatement_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "",
+                "Valid reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis statement is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithEmptyReasoning_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis reasoning is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithEmptyExpectedOutcome_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "Valid reasoning.",
+                "",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis expected outcome is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithEmptySuccessCriteria_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "Valid reasoning.",
+                "Valid expected outcome.",
+                "",
+                Confidence.FromPercentage(60),
+                [evidenceId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis success criteria is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithNoEvidenceIds_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "Valid reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis must reference at least one piece of evidence.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithUnknownEvidenceId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "Valid reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Hypothesis cannot reference evidence that does not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        ventureCase.Archive();
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "Valid reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot create hypotheses for an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithDuplicateEvidenceIds_StoresDistinctEvidenceIds()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "Valid reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId, evidenceId]));
+
+        Assert.True(result.IsSuccess);
+
+        var hypothesis = Assert.Single(ventureCase.Hypotheses);
+
+        Assert.Single(hypothesis.EvidenceIds);
+    }
+
+    [Fact]
+    public void CreateHypothesis_WithValidDraft_RaisesHypothesisCreatedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.CreateHypothesis(
+            new HypothesisDraft(
+                "Valid statement.",
+                "Valid reasoning.",
+                "Valid expected outcome.",
+                "Valid success criteria.",
+                Confidence.FromPercentage(60),
+                [evidenceId]));
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<HypothesisCreatedEvent>(domainEvent);
+    }
+
+    private static Guid CreateValidEvidence(Case ventureCase)
+    {
+        ventureCase.AddObservation(
+            new ObservationDraft(
+                "Raw observation text.",
+                "Valid observation summary.",
+                "Manual research note",
+                ObservationSource.ManualNote,
+                Confidence.FromPercentage(80)));
+
+        var observationId = ventureCase.Observations.Single().Id;
+
+        ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Valid evidence summary.",
+                "Valid evidence interpretation.",
+                EvidenceDirection.Supports,
+                [observationId]));
+
+        return ventureCase.Evidence.Single().Id;
     }
 }
