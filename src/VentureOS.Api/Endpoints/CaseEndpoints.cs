@@ -1,5 +1,6 @@
 ﻿using VentureOS.Application.Cases.CreateCase;
 using VentureOS.Application.Cases.GetCase;
+using Microsoft.AspNetCore.Mvc;
 
 namespace VentureOS.Api.Endpoints;
 
@@ -11,8 +12,8 @@ public static class CaseEndpoints
         app.MapPost(
             "/cases",
             async (
-                CreateCaseCommand command,
-                CreateCaseHandler handler,
+                [FromBody] CreateCaseCommand command,
+                [FromServices] CreateCaseHandler handler,
                 CancellationToken cancellationToken) =>
             {
                 var result = await handler.HandleAsync(command, cancellationToken);
@@ -31,7 +32,7 @@ public static class CaseEndpoints
             "/cases/{id:guid}",
             async (
                 Guid id,
-                GetCaseHandler handler,
+                [FromServices] GetCaseHandler handler,
                 CancellationToken cancellationToken) =>
             {
                 var result = await handler.HandleAsync(

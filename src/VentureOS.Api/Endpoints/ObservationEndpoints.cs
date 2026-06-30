@@ -1,6 +1,7 @@
 ﻿using VentureOS.Application.Cases.AddObservation;
 using VentureOS.Domain.Common;
 using VentureOS.Domain.Observations;
+using Microsoft.AspNetCore.Mvc;
 
 namespace VentureOS.Api.Endpoints;
 
@@ -13,8 +14,8 @@ public static class ObservationEndpoints
             "/cases/{id:guid}/observations",
             async (
                 Guid id,
-                AddObservationRequest request,
-                AddObservationHandler handler,
+                [FromBody] AddObservationRequest request,
+                [FromServices] AddObservationHandler handler,
                 CancellationToken cancellationToken) =>
             {
                 var command = new AddObservationCommand(

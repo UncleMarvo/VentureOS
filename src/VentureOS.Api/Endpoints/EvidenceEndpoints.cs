@@ -1,6 +1,7 @@
 ﻿
 using VentureOS.Application.Cases.CreateEvidence;
 using VentureOS.Domain.Evidence;
+using Microsoft.AspNetCore.Mvc;
 
 namespace VentureOS.Api.Endpoints;
 
@@ -13,8 +14,8 @@ public static class EvidenceEndpoints
             "/cases/{id:guid}/evidence",
             async (
                 Guid id,
-                CreateEvidenceRequest request,
-                CreateEvidenceHandler handler,
+                [FromBody] CreateEvidenceRequest request,
+                [FromServices] CreateEvidenceHandler handler,
                 CancellationToken cancellationToken) =>
             {
                 var command = new CreateEvidenceCommand(
