@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VentureOS.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+749a632f21ae309753c2d68a2007b1628ec4d31c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5201e1b9052ab7be66e72dee921a116a3f72943f")]
 [assembly: System.Reflection.AssemblyProductAttribute("VentureOS.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VentureOS.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
