@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VentureOS.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0744e372da221739932813866ba1453db5cb22a3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ccff27ef8c3eacf8ad6de724efc64b95990107f")]
 [assembly: System.Reflection.AssemblyProductAttribute("VentureOS.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VentureOS.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
