@@ -5,6 +5,7 @@ using VentureOS.Domain.Evidence;
 using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Observations;
 using VentureOS.Domain.Assumptions;
+using VentureOS.Domain.Challenges;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -690,6 +691,209 @@ public sealed class CaseTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("Hypothesis cannot reference assumptions that do not belong to the case.", result.Error);
+    }
+
+    // ======================================
+    // CHALLENGE TESTS
+    // ======================================
+    [Fact]
+    public void RaiseChallenge_AgainstHypothesis_WithValidDraft_CreatesChallenge()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                hypothesis.Id,
+                "The target market may not be willing to pay.",
+                "The hypothesis relies on willingness to pay, but no pricing evidence has been gathered.",
+                Confidence.FromPercentage(70)));
+
+        Assert.True(result.IsSuccess);
+
+        var challenge = Assert.Single(ventureCase.Challenges);
+
+        Assert.Equal(ventureCase.Id, challenge.CaseId);
+        Assert.Equal(ChallengeTarget.Hypothesis, challenge.Target);
+        Assert.Equal(hypothesis.Id, challenge.TargetId);
+        Assert.Equal("The target market may not be willing to pay.", challenge.Statement);
+        Assert.Equal("The hypothesis relies on willingness to pay, but no pricing evidence has been gathered.", challenge.Reasoning);
+        Assert.Equal(70, challenge.Confidence.Value);
+    }
+
+    [Fact]
+    public void RaiseChallenge_AgainstEvidence_WithValidDraft_CreatesChallenge()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Evidence,
+                evidenceId,
+                "The evidence may be too weak.",
+                "The interpretation is based on a single observation.",
+                Confidence.FromPercentage(65)));
+
+        Assert.True(result.IsSuccess);
+
+        var challenge = Assert.Single(ventureCase.Challenges);
+
+        Assert.Equal(ChallengeTarget.Evidence, challenge.Target);
+        Assert.Equal(evidenceId, challenge.TargetId);
+    }
+
+    [Fact]
+    public void RaiseChallenge_AgainstAssumption_WithValidDraft_CreatesChallenge()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var assumptionId = CreateValidAssumption(ventureCase);
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Assumption,
+                assumptionId,
+                "The assumption may be untested.",
+                "No direct evidence currently confirms willingness to pay.",
+                Confidence.FromPercentage(75)));
+
+        Assert.True(result.IsSuccess);
+
+        var challenge = Assert.Single(ventureCase.Challenges);
+
+        Assert.Equal(ChallengeTarget.Assumption, challenge.Target);
+        Assert.Equal(assumptionId, challenge.TargetId);
+    }
+
+    [Fact]
+    public void RaiseChallenge_WithEmptyTargetId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                Guid.Empty,
+                "Valid statement.",
+                "Valid reasoning.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Challenge target ID is required.", result.Error);
+    }
+
+    [Fact]
+    public void RaiseChallenge_WithEmptyStatement_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                hypothesis.Id,
+                "",
+                "Valid reasoning.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Challenge statement is required.", result.Error);
+    }
+
+    [Fact]
+    public void RaiseChallenge_WithEmptyReasoning_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                hypothesis.Id,
+                "Valid statement.",
+                "",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Challenge reasoning is required.", result.Error);
+    }
+
+    [Fact]
+    public void RaiseChallenge_WithUnknownTarget_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                Guid.NewGuid(),
+                "Valid statement.",
+                "Valid reasoning.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Challenge target does not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void RaiseChallenge_AgainstDecisionBeforeDecisionExists_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Decision,
+                Guid.NewGuid(),
+                "Valid statement.",
+                "Valid reasoning.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Challenge target does not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void RaiseChallenge_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        ventureCase.Archive();
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                hypothesis.Id,
+                "Valid statement.",
+                "Valid reasoning.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot raise challenges for an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void RaiseChallenge_WithValidDraft_RaisesChallengeRaisedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Hypothesis,
+                hypothesis.Id,
+                "Valid statement.",
+                "Valid reasoning.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<ChallengeRaisedEvent>(domainEvent);
     }
 
     // ==================================

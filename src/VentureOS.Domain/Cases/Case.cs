@@ -4,6 +4,7 @@ using VentureOS.Domain.Observations;
 using VentureOS.Domain.Evidence;
 using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Assumptions;
+using VentureOS.Domain.Challenges;
 
 namespace VentureOS.Domain.Cases;
 
@@ -13,6 +14,7 @@ public sealed class Case : AggregateRoot
     private readonly List<Evidence.Evidence> _evidence = [];
     private readonly List<Hypothesis> _hypotheses = [];
     private readonly List<Assumption> _assumptions = [];
+    private readonly List<Challenge> _challenges = [];
 
     private Case(
         Guid id,
@@ -46,6 +48,8 @@ public sealed class Case : AggregateRoot
     public IReadOnlyCollection<Hypothesis> Hypotheses => _hypotheses.AsReadOnly();
 
     public IReadOnlyCollection<Assumption> Assumptions => _assumptions.AsReadOnly();
+
+    public IReadOnlyCollection<Challenge> Challenges => _challenges.AsReadOnly();
 
     public static Result<Case> Create(string title, string mission)
     {
@@ -314,5 +318,72 @@ public sealed class Case : AggregateRoot
         AddDomainEvent(new AssumptionCreatedEvent(Id, assumption.Id, assumption.Statement));
 
         return Result.Success();
+    }
+
+    // ============================
+    // CHALLENGES
+    // ============================
+    public Result RaiseChallenge(ChallengeDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result.Failure("Cannot raise challenges for an archived case.");
+        }
+
+        if (draft.TargetId == Guid.Empty)
+        {
+            return Result.Failure("Challenge target ID is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Statement))
+        {
+            return Result.Failure("Challenge statement is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Reasoning))
+        {
+            return Result.Failure("Challenge reasoning is required.");
+        }
+
+        if (!TargetExists(draft.Target, draft.TargetId))
+        {
+            return Result.Failure("Challenge target does not belong to the case.");
+        }
+
+        var challenge = new Challenge(
+            Guid.NewGuid(),
+            Id,
+            draft.Target,
+            draft.TargetId,
+            draft.Statement.Trim(),
+            draft.Reasoning.Trim(),
+            draft.Confidence,
+            DateTime.UtcNow);
+
+        _challenges.Add(challenge);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new ChallengeRaisedEvent(
+            Id,
+            challenge.Id,
+            challenge.Target,
+            challenge.TargetId,
+            challenge.Statement));
+
+        return Result.Success();
+    }
+
+    private bool TargetExists(ChallengeTarget target, Guid targetId)
+    {
+        return target switch
+        {
+            ChallengeTarget.Evidence => _evidence.Any(evidence => evidence.Id == targetId),
+            ChallengeTarget.Assumption => _assumptions.Any(assumption => assumption.Id == targetId),
+            ChallengeTarget.Hypothesis => _hypotheses.Any(hypothesis => hypothesis.Id == targetId),
+            ChallengeTarget.Decision => false,
+            _ => false
+        };
     }
 }
