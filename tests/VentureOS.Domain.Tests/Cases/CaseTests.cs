@@ -79,4 +79,76 @@ public sealed class CaseTests
         Assert.True(result.IsFailure);
         Assert.Equal("Archived cases cannot be activated.", result.Error);
     }
+
+    [Fact]
+    public void AddObservation_WithValidDetails_AddsObservationToCase()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.AddObservation(
+            "Accountants report spending time chasing client documents.",
+            "Manual research note");
+
+        Assert.True(result.IsSuccess);
+
+        var observation = Assert.Single(ventureCase.Observations);
+
+        Assert.Equal(ventureCase.Id, observation.CaseId);
+        Assert.Equal("Accountants report spending time chasing client documents.", observation.Summary);
+        Assert.Equal("Manual research note", observation.Source);
+    }
+
+    [Fact]
+    public void AddObservation_WithEmptySummary_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.AddObservation("", "Manual research note");
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Observation summary is required.", result.Error);
+    }
+
+    [Fact]
+    public void AddObservation_WithEmptySource_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.AddObservation("Valid observation.", "");
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Observation source is required.", result.Error);
+    }
+
+    [Fact]
+    public void AddObservation_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        ventureCase.Archive();
+
+        var result = ventureCase.AddObservation(
+            "Valid observation.",
+            "Manual research note");
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot add observations to an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void AddObservation_WithValidDetails_RaisesObservationAddedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.AddObservation(
+            "Valid observation.",
+            "Manual research note");
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<ObservationAddedEvent>(domainEvent);
+    }
 }
