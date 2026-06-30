@@ -121,7 +121,10 @@
         },
         "runtime": {
           "bin/placeholder/VentureOS.Infrastructure.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },

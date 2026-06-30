@@ -1,18 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\VentureOS.Domain\VentureOS.Domain.csproj" />
-    <ProjectReference Include="..\VentureOS.Application\VentureOS.Application.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="DuckDB.NET.Data.Full" Version="1.5.3" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DuckDB.NET.Data.Full" Version="1.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VentureOS.Domain\VentureOS.Domain.csproj" />
+    <ProjectReference Include="..\VentureOS.Application\VentureOS.Application.csproj" />
+  </ItemGroup>
 
 </Project>
