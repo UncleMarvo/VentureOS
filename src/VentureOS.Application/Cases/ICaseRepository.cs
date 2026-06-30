@@ -11,4 +11,8 @@ public interface ICaseRepository
     Task<Case?> GetByIdAsync(
         Guid caseId, 
         CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(
+        Case ventureCase,
+        CancellationToken cancellationToken = default);
 }

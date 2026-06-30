@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VentureOS.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6c471ea8b58c12a77f5ce4fb0169ee1d56574816")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b29384934582aab8d2638dd0ef5b8cf93acd0f12")]
 [assembly: System.Reflection.AssemblyProductAttribute("VentureOS.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VentureOS.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
