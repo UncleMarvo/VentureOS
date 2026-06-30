@@ -1,6 +1,7 @@
 ﻿using VentureOS.Domain.Cases;
 using VentureOS.Domain.Cases.Events;
 using VentureOS.Domain.Observations;
+using VentureOS.Domain.Evidence;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -81,6 +82,10 @@ public sealed class CaseTests
         Assert.Equal("Archived cases cannot be activated.", result.Error);
     }
 
+    // ======================================
+    // OBSERVATION TESTS
+    // ======================================
+
     [Fact]
     public void AddObservation_WithValidDetails_AddsObservationToCase()
     {
@@ -160,5 +165,180 @@ public sealed class CaseTests
         var domainEvent = Assert.Single(ventureCase.DomainEvents);
 
         Assert.IsType<ObservationAddedEvent>(domainEvent);
+    }
+
+    // ======================================
+    // EVIDENCE TESTS
+    // ======================================
+
+    [Fact]
+    public void CreateEvidence_WithValidDraft_CreatesEvidence()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.AddObservation(
+            new ObservationDraft(
+                "Accountants report spending time chasing client documents.",
+                "Manual research note"));
+
+        var observationId = ventureCase.Observations.Single().Id;
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Document chasing appears to be a repeated admin burden.",
+                "The observation suggests accountants experience recurring administrative friction around collecting documents.",
+                EvidenceDirection.Supports,
+                [observationId]));
+
+        Assert.True(result.IsSuccess);
+
+        var evidence = Assert.Single(ventureCase.Evidence);
+
+        Assert.Equal(ventureCase.Id, evidence.CaseId);
+        Assert.Equal("Document chasing appears to be a repeated admin burden.", evidence.Summary);
+        Assert.Equal("The observation suggests accountants experience recurring administrative friction around collecting documents.", evidence.Interpretation);
+        Assert.Equal(EvidenceDirection.Supports, evidence.Direction);
+        Assert.Contains(observationId, evidence.ObservationIds);
+    }
+
+    [Fact]
+    public void CreateEvidence_WithEmptySummary_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.AddObservation(
+            new ObservationDraft("Valid observation.", "Manual research note"));
+
+        var observationId = ventureCase.Observations.Single().Id;
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "",
+                "Valid interpretation.",
+                EvidenceDirection.Supports,
+                [observationId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Evidence summary is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateEvidence_WithEmptyInterpretation_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.AddObservation(
+            new ObservationDraft("Valid observation.", "Manual research note"));
+
+        var observationId = ventureCase.Observations.Single().Id;
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Valid summary.",
+                "",
+                EvidenceDirection.Supports,
+                [observationId]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Evidence interpretation is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateEvidence_WithNoObservationIds_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Valid summary.",
+                "Valid interpretation.",
+                EvidenceDirection.Supports,
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Evidence must reference at least one observation.", result.Error);
+    }
+
+    [Fact]
+    public void CreateEvidence_WithUnknownObservationId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Valid summary.",
+                "Valid interpretation.",
+                EvidenceDirection.Supports,
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Evidence cannot reference observations that do not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateEvidence_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        ventureCase.Archive();
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Valid summary.",
+                "Valid interpretation.",
+                EvidenceDirection.Supports,
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot create evidence for an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateEvidence_WithDuplicateObservationIds_StoresDistinctObservationIds()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.AddObservation(
+            new ObservationDraft("Valid observation.", "Manual research note"));
+
+        var observationId = ventureCase.Observations.Single().Id;
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Valid summary.",
+                "Valid interpretation.",
+                EvidenceDirection.Supports,
+                [observationId, observationId]));
+
+        Assert.True(result.IsSuccess);
+
+        var evidence = Assert.Single(ventureCase.Evidence);
+
+        Assert.Single(evidence.ObservationIds);
+    }
+
+    [Fact]
+    public void CreateEvidence_WithValidDraft_RaisesEvidenceCreatedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.AddObservation(
+            new ObservationDraft("Valid observation.", "Manual research note"));
+
+        var observationId = ventureCase.Observations.Single().Id;
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.CreateEvidence(
+            new EvidenceDraft(
+                "Valid summary.",
+                "Valid interpretation.",
+                EvidenceDirection.Supports,
+                [observationId]));
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<EvidenceCreatedEvent>(domainEvent);
     }
 }

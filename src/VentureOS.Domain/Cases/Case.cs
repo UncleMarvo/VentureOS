@@ -1,12 +1,14 @@
 ﻿using VentureOS.Domain.Cases.Events;
 using VentureOS.Domain.Common;
 using VentureOS.Domain.Observations;
+using VentureOS.Domain.Evidence;
 
 namespace VentureOS.Domain.Cases;
 
 public sealed class Case : AggregateRoot
 {
     private readonly List<Observation> _observations = [];
+    private readonly List<Evidence.Evidence> _evidence = [];
 
     private Case(
         Guid id,
@@ -34,6 +36,8 @@ public sealed class Case : AggregateRoot
     public DateTime UpdatedAtUtc { get; private set; }
 
     public IReadOnlyCollection<Observation> Observations => _observations.AsReadOnly();
+
+    public IReadOnlyCollection<Evidence.Evidence> Evidence => _evidence.AsReadOnly();
 
     public static Result<Case> Create(string title, string mission)
     {
@@ -112,6 +116,58 @@ public sealed class Case : AggregateRoot
 
         Status = CaseStatus.Archived;
         UpdatedAtUtc = DateTime.UtcNow;
+
+        return Result.Success();
+    }
+
+    public Result CreateEvidence(EvidenceDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result.Failure("Cannot create evidence for an archived case.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Summary))
+        {
+            return Result.Failure("Evidence summary is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Interpretation))
+        {
+            return Result.Failure("Evidence interpretation is required.");
+        }
+
+        if (draft.ObservationIds.Count == 0)
+        {
+            return Result.Failure("Evidence must reference at least one observation.");
+        }
+
+        var knownObservationIds = _observations.Select(observation => observation.Id).ToHashSet();
+
+        var unknownObservationIds = draft.ObservationIds
+            .Where(observationId => !knownObservationIds.Contains(observationId))
+            .ToArray();
+
+        if (unknownObservationIds.Length > 0)
+        {
+            return Result.Failure("Evidence cannot reference observations that do not belong to the case.");
+        }
+
+        var evidence = new Evidence.Evidence(
+            Guid.NewGuid(),
+            Id,
+            draft.Summary.Trim(),
+            draft.Interpretation.Trim(),
+            draft.Direction,
+            draft.ObservationIds.Distinct().ToArray(),
+            DateTime.UtcNow);
+
+        _evidence.Add(evidence);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new EvidenceCreatedEvent(Id, evidence.Id, evidence.Direction, evidence.Summary));
 
         return Result.Success();
     }
