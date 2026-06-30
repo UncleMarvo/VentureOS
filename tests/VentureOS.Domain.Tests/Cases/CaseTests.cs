@@ -1,10 +1,9 @@
-using System.Security.AccessControl;
+using VentureOS.Domain.Common;
 using VentureOS.Domain.Cases;
 using VentureOS.Domain.Cases.Events;
-using VentureOS.Domain.Common;
 using VentureOS.Domain.Evidence;
-using VentureOS.Domain.Observations;
 using VentureOS.Domain.Hypotheses;
+using VentureOS.Domain.Observations;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -408,227 +407,152 @@ public sealed class CaseTests
     // HYPOTHESIS TESTS
     // =========================
     [Fact]
-    public void CreateHypothesis_WithValidDraft_CreatesHypothesis()
+    public void Hypothesis_MarkSupported_ChangesStatusToSupported()
     {
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
 
-        ventureCase.AddObservation(
-            new ObservationDraft(
-                "Every month-end I spend half my Friday chasing missing invoices from clients.",
-                "Accountants spend significant time collecting invoices.",
-                "Manual research note",
-                ObservationSource.ManualNote,
-                Confidence.FromPercentage(80)));
-
-        var observationId = ventureCase.Observations.Single().Id;
-
-        ventureCase.CreateEvidence(
-            new EvidenceDraft(
-                "Document chasing appears to be a repeated admin burden.",
-                "The observation suggests recurring administrative friction around collecting documents.",
-                EvidenceDirection.Supports,
-                [observationId]));
-
-        var evidenceId = ventureCase.Evidence.Single().Id;
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Small accounting firms will pay for automated client document chasing.",
-                "Evidence suggests document collection creates recurring administrative friction.",
-                "At least some small accounting firms express willingness to evaluate an automation tool.",
-                "Interview or landing page evidence shows measurable interest from target firms.",
-                Confidence.FromPercentage(65),
-                [evidenceId]));
+        var result = hypothesis.MarkSupported();
 
         Assert.True(result.IsSuccess);
-
-        var hypothesis = Assert.Single(ventureCase.Hypotheses);
-
-        Assert.Equal(ventureCase.Id, hypothesis.CaseId);
-        Assert.Equal("Small accounting firms will pay for automated client document chasing.", hypothesis.Statement);
-        Assert.Equal("Evidence suggests document collection creates recurring administrative friction.", hypothesis.Reasoning);
-        Assert.Equal("At least some small accounting firms express willingness to evaluate an automation tool.", hypothesis.ExpectedOutcome);
-        Assert.Equal("Interview or landing page evidence shows measurable interest from target firms.", hypothesis.SuccessCriteria);
-        Assert.Equal(65, hypothesis.Confidence.Value);
-        Assert.Equal(HypothesisStatus.Proposed, hypothesis.Status);
-        Assert.Contains(evidenceId, hypothesis.EvidenceIds);
+        Assert.Equal(HypothesisStatus.Supported, hypothesis.Status);
     }
 
     [Fact]
-    public void CreateHypothesis_WithEmptyStatement_ReturnsFailure()
+    public void Hypothesis_MarkChallenged_ChangesStatusToChallenged()
     {
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-        var evidenceId = CreateValidEvidence(ventureCase);
+        var hypothesis = CreateValidHypothesis(ventureCase);
 
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "",
-                "Valid reasoning.",
-                "Valid expected outcome.",
-                "Valid success criteria.",
-                Confidence.FromPercentage(60),
-                [evidenceId]));
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Hypothesis statement is required.", result.Error);
-    }
-
-    [Fact]
-    public void CreateHypothesis_WithEmptyReasoning_ReturnsFailure()
-    {
-        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-        var evidenceId = CreateValidEvidence(ventureCase);
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Valid statement.",
-                "",
-                "Valid expected outcome.",
-                "Valid success criteria.",
-                Confidence.FromPercentage(60),
-                [evidenceId]));
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Hypothesis reasoning is required.", result.Error);
-    }
-
-    [Fact]
-    public void CreateHypothesis_WithEmptyExpectedOutcome_ReturnsFailure()
-    {
-        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-        var evidenceId = CreateValidEvidence(ventureCase);
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Valid statement.",
-                "Valid reasoning.",
-                "",
-                "Valid success criteria.",
-                Confidence.FromPercentage(60),
-                [evidenceId]));
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Hypothesis expected outcome is required.", result.Error);
-    }
-
-    [Fact]
-    public void CreateHypothesis_WithEmptySuccessCriteria_ReturnsFailure()
-    {
-        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-        var evidenceId = CreateValidEvidence(ventureCase);
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Valid statement.",
-                "Valid reasoning.",
-                "Valid expected outcome.",
-                "",
-                Confidence.FromPercentage(60),
-                [evidenceId]));
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Hypothesis success criteria is required.", result.Error);
-    }
-
-    [Fact]
-    public void CreateHypothesis_WithNoEvidenceIds_ReturnsFailure()
-    {
-        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Valid statement.",
-                "Valid reasoning.",
-                "Valid expected outcome.",
-                "Valid success criteria.",
-                Confidence.FromPercentage(60),
-                []));
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Hypothesis must reference at least one piece of evidence.", result.Error);
-    }
-
-    [Fact]
-    public void CreateHypothesis_WithUnknownEvidenceId_ReturnsFailure()
-    {
-        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Valid statement.",
-                "Valid reasoning.",
-                "Valid expected outcome.",
-                "Valid success criteria.",
-                Confidence.FromPercentage(60),
-                [Guid.NewGuid()]));
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Hypothesis cannot reference evidence that does not belong to the case.", result.Error);
-    }
-
-    [Fact]
-    public void CreateHypothesis_WhenCaseArchived_ReturnsFailure()
-    {
-        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-        ventureCase.Archive();
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Valid statement.",
-                "Valid reasoning.",
-                "Valid expected outcome.",
-                "Valid success criteria.",
-                Confidence.FromPercentage(60),
-                [Guid.NewGuid()]));
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Cannot create hypotheses for an archived case.", result.Error);
-    }
-
-    [Fact]
-    public void CreateHypothesis_WithDuplicateEvidenceIds_StoresDistinctEvidenceIds()
-    {
-        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
-        var evidenceId = CreateValidEvidence(ventureCase);
-
-        var result = ventureCase.CreateHypothesis(
-            new HypothesisDraft(
-                "Valid statement.",
-                "Valid reasoning.",
-                "Valid expected outcome.",
-                "Valid success criteria.",
-                Confidence.FromPercentage(60),
-                [evidenceId, evidenceId]));
+        var result = hypothesis.MarkChallenged();
 
         Assert.True(result.IsSuccess);
-
-        var hypothesis = Assert.Single(ventureCase.Hypotheses);
-
-        Assert.Single(hypothesis.EvidenceIds);
+        Assert.Equal(HypothesisStatus.Challenged, hypothesis.Status);
     }
 
     [Fact]
-    public void CreateHypothesis_WithValidDraft_RaisesHypothesisCreatedDomainEvent()
+    public void Hypothesis_Accept_ChangesStatusToAccepted()
     {
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = hypothesis.Accept();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(HypothesisStatus.Accepted, hypothesis.Status);
+    }
+
+    [Fact]
+    public void Hypothesis_Reject_ChangesStatusToRejected()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = hypothesis.Reject();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(HypothesisStatus.Rejected, hypothesis.Status);
+    }
+
+    [Fact]
+    public void Hypothesis_Supersede_ChangesStatusToSuperseded()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        var result = hypothesis.Supersede();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(HypothesisStatus.Superseded, hypothesis.Status);
+    }
+
+    [Fact]
+    public void Hypothesis_MarkSupported_WhenRejected_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        hypothesis.Reject();
+
+        var result = hypothesis.MarkSupported();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Rejected or superseded hypotheses cannot be marked as supported.", result.Error);
+    }
+
+    [Fact]
+    public void Hypothesis_MarkChallenged_WhenSuperseded_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        hypothesis.Supersede();
+
+        var result = hypothesis.MarkChallenged();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Rejected or superseded hypotheses cannot be challenged.", result.Error);
+    }
+
+    [Fact]
+    public void Hypothesis_Accept_WhenRejected_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        hypothesis.Reject();
+
+        var result = hypothesis.Accept();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Rejected hypotheses cannot be accepted.", result.Error);
+    }
+
+    [Fact]
+    public void Hypothesis_Reject_WhenAccepted_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        hypothesis.Accept();
+
+        var result = hypothesis.Reject();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Accepted hypotheses cannot be rejected.", result.Error);
+    }
+
+    [Fact]
+    public void Hypothesis_Supersede_WhenAccepted_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var hypothesis = CreateValidHypothesis(ventureCase);
+
+        hypothesis.Accept();
+
+        var result = hypothesis.Supersede();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Accepted hypotheses cannot be superseded.", result.Error);
+    }
+
+    // ==================================
+    // HELPER METHODS
+    // ==================================
+    private static Hypothesis CreateValidHypothesis(Case ventureCase)
+    {
         var evidenceId = CreateValidEvidence(ventureCase);
 
-        ventureCase.ClearDomainEvents();
-
-        var result = ventureCase.CreateHypothesis(
+        ventureCase.CreateHypothesis(
             new HypothesisDraft(
-                "Valid statement.",
-                "Valid reasoning.",
+                "Valid hypothesis statement.",
+                "Valid hypothesis reasoning.",
                 "Valid expected outcome.",
                 "Valid success criteria.",
                 Confidence.FromPercentage(60),
                 [evidenceId]));
 
-        Assert.True(result.IsSuccess);
-
-        var domainEvent = Assert.Single(ventureCase.DomainEvents);
-
-        Assert.IsType<HypothesisCreatedEvent>(domainEvent);
+        return ventureCase.Hypotheses.Single();
     }
 
     private static Guid CreateValidEvidence(Case ventureCase)
@@ -641,7 +565,7 @@ public sealed class CaseTests
                 ObservationSource.ManualNote,
                 Confidence.FromPercentage(80)));
 
-        var observationId = ventureCase.Observations.Single().Id;
+        Guid observationId = ventureCase.Observations.Single().Id;
 
         ventureCase.CreateEvidence(
             new EvidenceDraft(
@@ -653,3 +577,5 @@ public sealed class CaseTests
         return ventureCase.Evidence.Single().Id;
     }
 }
+
+

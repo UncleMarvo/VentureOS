@@ -46,4 +46,84 @@ public sealed class Hypothesis : Entity
     public DateTime CreatedAtUtc { get; }
 
     public DateTime UpdatedAtUtc { get; private set; }
+
+    public Result MarkSupported()
+    {
+        if (Status is HypothesisStatus.Rejected or HypothesisStatus.Superseded)
+        {
+            return Result.Failure("Rejected or superseded hypotheses cannot be marked as supported.");
+        }
+
+        Status = HypothesisStatus.Supported;
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        return Result.Success();
+    }
+
+    public Result MarkChallenged()
+    {
+        if (Status is HypothesisStatus.Rejected or HypothesisStatus.Superseded)
+        {
+            return Result.Failure("Rejected or superseded hypotheses cannot be challenged.");
+        }
+
+        Status = HypothesisStatus.Challenged;
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        return Result.Success();
+    }
+
+    public Result Accept()
+    {
+        if (Status == HypothesisStatus.Rejected)
+        {
+            return Result.Failure("Rejected hypotheses cannot be accepted.");
+        }
+
+        if (Status == HypothesisStatus.Superseded)
+        {
+            return Result.Failure("Superseded hypotheses cannot be accepted.");
+        }
+
+        Status = HypothesisStatus.Accepted;
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        return Result.Success();
+    }
+
+    public Result Reject()
+    {
+        if (Status == HypothesisStatus.Accepted)
+        {
+            return Result.Failure("Accepted hypotheses cannot be rejected.");
+        }
+
+        if (Status == HypothesisStatus.Superseded)
+        {
+            return Result.Failure("Superseded hypotheses cannot be rejected.");
+        }
+
+        Status = HypothesisStatus.Rejected;
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        return Result.Success();
+    }
+
+    public Result Supersede()
+    {
+        if (Status == HypothesisStatus.Accepted)
+        {
+            return Result.Failure("Accepted hypotheses cannot be superseded.");
+        }
+
+        if (Status == HypothesisStatus.Rejected)
+        {
+            return Result.Failure("Rejected hypotheses cannot be superseded.");
+        }
+
+        Status = HypothesisStatus.Superseded;
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        return Result.Success();
+    }
 }
