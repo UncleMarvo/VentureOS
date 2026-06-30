@@ -8,6 +8,10 @@ public sealed class DuckDbCaseRepository : ICaseRepository
 {
     private readonly DuckDbConnectionFactory _connectionFactory;
 
+    private readonly ObservationStore _observationStore = new();
+
+    private readonly EvidenceStore _evidenceStore = new();
+
     public DuckDbCaseRepository(DuckDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
@@ -51,6 +55,22 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         AddParameter(command, "updated_at_utc", ventureCase.UpdatedAtUtc);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        // ==========================================
+        // OBSERVATIONS
+        // ==========================================
+        await _observationStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // EVIDENCE
+        // ==========================================
+        await _evidenceStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
     }
 
     public async Task<Case?> GetByIdAsync(
@@ -83,6 +103,22 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             return null;
         }
 
+        // ==========================================
+        // OBSERVATIONS
+        // ==========================================
+        var observations = await _observationStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
+        // ==========================================
+        // EVIDENCE
+        // ==========================================
+        var evidence = await _evidenceStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
         return Case.Restore(
             reader.GetGuid(reader.GetOrdinal("id")),
             reader.GetString(reader.GetOrdinal("title")),
@@ -90,8 +126,8 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             Enum.Parse<CaseStatus>(reader.GetString(reader.GetOrdinal("status"))),
             reader.GetDateTime(reader.GetOrdinal("created_at_utc")),
             reader.GetDateTime(reader.GetOrdinal("updated_at_utc")),
-            Array.Empty<VentureOS.Domain.Observations.Observation>(),
-            Array.Empty<VentureOS.Domain.Evidence.Evidence>(),
+            observations,
+            evidence,
             Array.Empty<VentureOS.Domain.Assumptions.Assumption>(),
             Array.Empty<VentureOS.Domain.Hypotheses.Hypothesis>(),
             Array.Empty<VentureOS.Domain.Challenges.Challenge>(),
@@ -127,6 +163,22 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         AddParameter(command, "updated_at_utc", ventureCase.UpdatedAtUtc);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        // ==========================================
+        // OBSERVATIONS
+        // ==========================================
+        await _observationStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // EVIDENCE
+        // ==========================================
+        await _evidenceStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
     }
 
     private static void AddParameter(
