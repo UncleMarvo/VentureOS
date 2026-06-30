@@ -1,5 +1,6 @@
 ﻿using VentureOS.Domain.Cases;
 using VentureOS.Domain.Cases.Events;
+using VentureOS.Domain.Observations;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -86,8 +87,9 @@ public sealed class CaseTests
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
 
         var result = ventureCase.AddObservation(
-            "Accountants report spending time chasing client documents.",
-            "Manual research note");
+            new ObservationDraft(
+                "Accountants report spending time chasing client documents.",
+                "Manual research note"));
 
         Assert.True(result.IsSuccess);
 
@@ -103,7 +105,10 @@ public sealed class CaseTests
     {
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
 
-        var result = ventureCase.AddObservation("", "Manual research note");
+        var result = ventureCase.AddObservation(
+            new ObservationDraft(
+                "", 
+                "Manual research note"));
 
         Assert.True(result.IsFailure);
         Assert.Equal("Observation summary is required.", result.Error);
@@ -114,7 +119,10 @@ public sealed class CaseTests
     {
         var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
 
-        var result = ventureCase.AddObservation("Valid observation.", "");
+        var result = ventureCase.AddObservation(
+            new ObservationDraft(
+                "Valid observation.", 
+                ""));
 
         Assert.True(result.IsFailure);
         Assert.Equal("Observation source is required.", result.Error);
@@ -127,8 +135,9 @@ public sealed class CaseTests
         ventureCase.Archive();
 
         var result = ventureCase.AddObservation(
-            "Valid observation.",
-            "Manual research note");
+            new ObservationDraft(
+                "Valid observation.",
+                "Manual research note"));
 
         Assert.True(result.IsFailure);
         Assert.Equal("Cannot add observations to an archived case.", result.Error);
@@ -142,8 +151,9 @@ public sealed class CaseTests
         ventureCase.ClearDomainEvents();
 
         var result = ventureCase.AddObservation(
-            "Valid observation.",
-            "Manual research note");
+            new ObservationDraft(
+                "Valid observation.",
+                "Manual research note"));
 
         Assert.True(result.IsSuccess);
 

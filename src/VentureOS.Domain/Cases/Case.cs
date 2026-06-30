@@ -56,19 +56,21 @@ public sealed class Case : AggregateRoot
         return Result<Case>.Success(ventureCase);
     }
 
-    public Result AddObservation(string summary, string source)
+    public Result AddObservation(ObservationDraft draft)
     {
+        ArgumentNullException.ThrowIfNull(draft);
+
         if (Status == CaseStatus.Archived)
         {
             return Result.Failure("Cannot add observations to an archived case.");
         }
 
-        if (string.IsNullOrWhiteSpace(summary))
+        if (string.IsNullOrWhiteSpace(draft.Summary))
         {
             return Result.Failure("Observation summary is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(source))
+        if (string.IsNullOrWhiteSpace(draft.Source))
         {
             return Result.Failure("Observation source is required.");
         }
@@ -76,8 +78,8 @@ public sealed class Case : AggregateRoot
         var observation = new Observation(
             Guid.NewGuid(),
             Id,
-            summary.Trim(),
-            source.Trim(),
+            draft.Summary.Trim(),
+            draft.Source.Trim(),
             DateTime.UtcNow);
 
         _observations.Add(observation);
