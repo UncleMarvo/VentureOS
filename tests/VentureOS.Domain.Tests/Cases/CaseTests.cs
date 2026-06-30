@@ -4,6 +4,7 @@ using VentureOS.Domain.Cases.Events;
 using VentureOS.Domain.Evidence;
 using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Observations;
+using VentureOS.Domain.Assumptions;
 
 namespace VentureOS.Domain.Tests.Cases;
 
@@ -534,6 +535,97 @@ public sealed class CaseTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("Accepted hypotheses cannot be superseded.", result.Error);
+    }
+
+    // ======================================
+    // ASSUMPTION TESTS
+    // ======================================
+    [Fact]
+    public void CreateAssumption_WithValidDraft_CreatesAssumption()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateAssumption(
+            new AssumptionDraft(
+                "Small accounting firms are willing to pay for admin automation.",
+                "The target users experience recurring admin pain and may value time savings.",
+                Confidence.FromPercentage(55)));
+
+        Assert.True(result.IsSuccess);
+
+        var assumption = Assert.Single(ventureCase.Assumptions);
+
+        Assert.Equal(ventureCase.Id, assumption.CaseId);
+        Assert.Equal("Small accounting firms are willing to pay for admin automation.", assumption.Statement);
+        Assert.Equal("The target users experience recurring admin pain and may value time savings.", assumption.Rationale);
+        Assert.Equal(55, assumption.Confidence.Value);
+        Assert.Equal(AssumptionStatus.Proposed, assumption.Status);
+    }
+
+    [Fact]
+    public void CreateAssumption_WithEmptyStatement_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateAssumption(
+            new AssumptionDraft(
+                "",
+                "Valid rationale.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Assumption statement is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateAssumption_WithEmptyRationale_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateAssumption(
+            new AssumptionDraft(
+                "Valid statement.",
+                "",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Assumption rationale is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateAssumption_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        ventureCase.Archive();
+
+        var result = ventureCase.CreateAssumption(
+            new AssumptionDraft(
+                "Valid statement.",
+                "Valid rationale.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot create assumptions for an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateAssumption_WithValidDraft_RaisesAssumptionCreatedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.CreateAssumption(
+            new AssumptionDraft(
+                "Valid statement.",
+                "Valid rationale.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<AssumptionCreatedEvent>(domainEvent);
     }
 
     // ==================================

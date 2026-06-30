@@ -3,6 +3,7 @@ using VentureOS.Domain.Common;
 using VentureOS.Domain.Observations;
 using VentureOS.Domain.Evidence;
 using VentureOS.Domain.Hypotheses;
+using VentureOS.Domain.Assumptions;
 
 namespace VentureOS.Domain.Cases;
 
@@ -11,6 +12,7 @@ public sealed class Case : AggregateRoot
     private readonly List<Observation> _observations = [];
     private readonly List<Evidence.Evidence> _evidence = [];
     private readonly List<Hypothesis> _hypotheses = [];
+    private readonly List<Assumption> _assumptions = [];
 
     private Case(
         Guid id,
@@ -42,6 +44,8 @@ public sealed class Case : AggregateRoot
     public IReadOnlyCollection<Evidence.Evidence> Evidence => _evidence.AsReadOnly();
 
     public IReadOnlyCollection<Hypothesis> Hypotheses => _hypotheses.AsReadOnly();
+
+    public IReadOnlyCollection<Assumption> Assumptions => _assumptions.AsReadOnly();
 
     public static Result<Case> Create(string title, string mission)
     {
@@ -253,6 +257,44 @@ public sealed class Case : AggregateRoot
         UpdatedAtUtc = DateTime.UtcNow;
 
         AddDomainEvent(new HypothesisCreatedEvent(Id, hypothesis.Id, hypothesis.Statement));
+
+        return Result.Success();
+    }
+
+    // ============================
+    // ASSUMPTIONS
+    // ============================
+    public Result CreateAssumption(AssumptionDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result.Failure("Cannot create assumptions for an archived case.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Statement))
+        {
+            return Result.Failure("Assumption statement is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Rationale))
+        {
+            return Result.Failure("Assumption rationale is required.");
+        }
+
+        var assumption = new Assumption(
+            Guid.NewGuid(),
+            Id,
+            draft.Statement.Trim(),
+            draft.Rationale.Trim(),
+            draft.Confidence,
+            DateTime.UtcNow);
+
+        _assumptions.Add(assumption);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new AssumptionCreatedEvent(Id, assumption.Id, assumption.Statement));
 
         return Result.Success();
     }
