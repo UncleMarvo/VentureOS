@@ -24,6 +24,23 @@ public static class ResearchEndpoints
                     : Results.NotFound(result.Error);
             });
 
+        app.MapPost(
+            "/cases/{caseId:guid}/research/accept",
+            async (
+                Guid caseId,
+                [FromBody] ResearchPackageDto package,
+                [FromServices] AcceptResearchPackageHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await handler.HandleAsync(
+                    new AcceptResearchPackageCommand(caseId, package),
+                    cancellationToken);
+
+                return result.IsSuccess
+                    ? Results.Ok(result.Value)
+                    : Results.BadRequest(result.Error);
+            });
+
         return app;
     }
 }

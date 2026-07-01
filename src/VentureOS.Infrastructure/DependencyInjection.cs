@@ -59,6 +59,7 @@ public static class DependencyInjection
             {
                 client.Timeout = TimeSpan.FromMinutes(10);
             });
+        services.AddScoped<AcceptResearchPackageHandler>();
 
         return services;
     }

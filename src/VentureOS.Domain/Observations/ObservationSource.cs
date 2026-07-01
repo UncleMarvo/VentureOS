@@ -1,4 +1,4 @@
-﻿namespace VentureOS.Domain.Observations;
+namespace VentureOS.Domain.Observations;
 
 public enum ObservationSource
 {
@@ -11,5 +11,6 @@ public enum ObservationSource
     ForumPost = 6,
     Review = 7,
     CompetitorWebsite = 8,
-    RegulatorySource = 9
+    RegulatorySource = 9,
+    AiGeneratedResearch = 10
 }
