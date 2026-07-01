@@ -14,6 +14,8 @@ public sealed class DuckDbCaseRepository : ICaseRepository
 
     private readonly AssumptionStore _assumptionStore = new();
 
+    private readonly HypothesisStore _hypothesisStore = new();
+
     public DuckDbCaseRepository(DuckDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
@@ -81,6 +83,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             connection,
             ventureCase,
             cancellationToken);
+
+        // ==========================================
+        // HYPOTHESIS
+        // ==========================================
+        await _hypothesisStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
     }
 
     public async Task<Case?> GetByIdAsync(
@@ -137,6 +147,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             caseId,
             cancellationToken);
 
+        // ==========================================
+        // HYPOTHESIS
+        // ==========================================
+        var hypotheses = await _hypothesisStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
         return Case.Restore(
             reader.GetGuid(reader.GetOrdinal("id")),
             reader.GetString(reader.GetOrdinal("title")),
@@ -147,7 +165,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             observations,
             evidence,
             assumptions,
-            Array.Empty<VentureOS.Domain.Hypotheses.Hypothesis>(),
+            hypotheses,
             Array.Empty<VentureOS.Domain.Challenges.Challenge>(),
             Array.Empty<VentureOS.Domain.Decisions.Decision>(),
             Array.Empty<VentureOS.Domain.Lessons.Lesson>());
@@ -202,6 +220,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // ASSUMPTIONS
         // ==========================================
         await _assumptionStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // HYPOTHESIS
+        // ==========================================
+        await _hypothesisStore.ReplaceAsync(
             connection,
             ventureCase,
             cancellationToken);

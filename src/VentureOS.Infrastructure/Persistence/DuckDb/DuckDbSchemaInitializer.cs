@@ -68,7 +68,9 @@ public sealed class DuckDbSchemaInitializer
                 confidence VARCHAR NOT NULL,
                 evidence_ids VARCHAR NOT NULL,
                 assumption_ids VARCHAR NOT NULL,
-                created_at_utc TIMESTAMP NOT NULL
+                status VARCHAR NOT NULL,
+                created_at_utc TIMESTAMP NOT NULL,
+                updated_at_utc TIMESTAMP NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS challenges (

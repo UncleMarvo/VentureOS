@@ -27,6 +27,7 @@ app.MapCaseEndpoints();
 app.MapEvidenceEndpoints();
 app.MapObservationEndpoints();
 app.MapAssumptionEndpoints();
+app.MapHypothesisEndpoints();
 
 app.Run();
 
