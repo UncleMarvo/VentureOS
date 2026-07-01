@@ -30,6 +30,7 @@ app.MapAssumptionEndpoints();
 app.MapHypothesisEndpoints();
 app.MapChallengeEndpoints();
 app.MapDecisionEndpoints();
+app.MapLessonEndpoints();
 
 app.Run();
 

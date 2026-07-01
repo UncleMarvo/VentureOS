@@ -20,6 +20,8 @@ public sealed class DuckDbCaseRepository : ICaseRepository
 
     private readonly DecisionStore _decisionStore = new();
 
+    private readonly LessonStore _lessonStore = new();
+
     public DuckDbCaseRepository(DuckDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
@@ -111,6 +113,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             connection,
             ventureCase,
             cancellationToken);
+
+        // ==========================================
+        // LESSON
+        // ==========================================
+        await _lessonStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
     }
 
     public async Task<Case?> GetByIdAsync(
@@ -191,6 +201,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             caseId,
             cancellationToken);
 
+        // ==========================================
+        // LESSON
+        // ==========================================
+        var lessons = await _lessonStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
         return Case.Restore(
             reader.GetGuid(reader.GetOrdinal("id")),
             reader.GetString(reader.GetOrdinal("title")),
@@ -204,7 +222,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             hypotheses,
             challenges,
             decisions,
-            Array.Empty<VentureOS.Domain.Lessons.Lesson>());
+            lessons);
     }
 
     public async Task UpdateAsync(
@@ -280,6 +298,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // DECISION
         // ==========================================
         await _decisionStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // LESSON
+        // ==========================================
+        await _lessonStore.ReplaceAsync(
             connection,
             ventureCase,
             cancellationToken);
