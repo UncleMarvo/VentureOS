@@ -3,6 +3,7 @@ namespace VentureOS.Application.Research.ResearchCase;
 public sealed record ResearchPackageDto(
     Guid CaseId,
     string Mission,
+    ResearchGenerationDto Generation,
     IReadOnlyList<ProposedObservationDto> Observations,
     IReadOnlyList<ProposedEvidenceDto> Evidence,
     IReadOnlyList<ProposedAssumptionDto> Assumptions,
@@ -41,3 +42,13 @@ public sealed record ProposedChallengeDto(
     int Confidence,
     string TargetType,
     int TargetIndex);
+
+public sealed record ResearchGenerationDto(
+    string Provider,
+    string Model,
+    string Persona,
+    string PersonaVersion,
+    string PromptVersion,
+    DateTime GeneratedAtUtc,
+    TimeSpan Duration,
+    string Limitations);

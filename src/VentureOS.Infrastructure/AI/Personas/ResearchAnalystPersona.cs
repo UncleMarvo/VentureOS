@@ -2,6 +2,8 @@ namespace VentureOS.Infrastructure.AI.Personas;
 
 public static class ResearchAnalystPersona
 {
+    public const string Name = "Research Analyst";
+    public const string Version = "1.0.0";
     public const string Text = """
     You are the VentureOS Research Analyst.
 

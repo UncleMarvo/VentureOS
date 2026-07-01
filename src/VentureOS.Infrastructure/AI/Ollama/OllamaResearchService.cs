@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 using VentureOS.Application.Research;
 using VentureOS.Application.Research.ResearchCase;
 using VentureOS.Domain.Cases;
 using VentureOS.Infrastructure.AI.Prompts;
+using VentureOS.Infrastructure.AI.Personas;
 
 namespace VentureOS.Infrastructure.AI.Ollama;
 
@@ -27,18 +29,9 @@ public sealed class OllamaResearchService : IResearchService
         Case ventureCase,
         CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
         Console.WriteLine($"Using Ollama model: {_options.Model}");
-
-        var package = new ResearchPackageDto(
-            ventureCase.Id,
-            ventureCase.Mission,
-            [],
-            [],
-            [],
-            [],
-            []);
-
-        Console.WriteLine($"{_options.BaseUrl}/api/generate");
 
         var response = await _httpClient.PostAsJsonAsync(
             "/api/generate",
@@ -68,14 +61,27 @@ public sealed class OllamaResearchService : IResearchService
                 PropertyNameCaseInsensitive = true
             });
 
+        stopwatch.Stop();
+
         if (researchPackage is null)
         {
             throw new InvalidOperationException("Failed to deserialize Ollama research response.");
         }
 
+        var researchGeneration = new ResearchGenerationDto(
+            "Ollama",
+            _options.Model,
+            ResearchAnalystPersona.Name,
+            ResearchAnalystPersona.Version,
+            "1.0.0",
+            DateTime.UtcNow,
+            stopwatch.Elapsed,
+            "AI-generated research requiring human review.");
+
         return new ResearchPackageDto(
             ventureCase.Id,
             ventureCase.Mission,
+            researchGeneration,
             researchPackage.Observations,
             researchPackage.Evidence,
             researchPackage.Assumptions,
