@@ -26,6 +26,7 @@ using (var scope = app.Services.CreateScope())
 app.MapCaseEndpoints();
 app.MapEvidenceEndpoints();
 app.MapObservationEndpoints();
+app.MapAssumptionEndpoints();
 
 app.Run();
 

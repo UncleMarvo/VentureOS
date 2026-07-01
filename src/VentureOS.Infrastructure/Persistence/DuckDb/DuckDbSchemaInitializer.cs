@@ -1,4 +1,4 @@
-﻿namespace VentureOS.Infrastructure.Persistence.DuckDb;
+namespace VentureOS.Infrastructure.Persistence.DuckDb;
 
 public sealed class DuckDbSchemaInitializer
 {
@@ -53,7 +53,9 @@ public sealed class DuckDbSchemaInitializer
                 statement VARCHAR NOT NULL,
                 rationale VARCHAR NOT NULL,
                 confidence VARCHAR NOT NULL,
-                created_at_utc TIMESTAMP NOT NULL
+                status VARCHAR NOT NULL,
+                created_at_utc TIMESTAMP NOT NULL,
+                updated_at_utc TIMESTAMP NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS hypotheses (

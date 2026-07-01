@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using VentureOS.Application.Cases;
 using VentureOS.Domain.Cases;
 
@@ -11,6 +11,8 @@ public sealed class DuckDbCaseRepository : ICaseRepository
     private readonly ObservationStore _observationStore = new();
 
     private readonly EvidenceStore _evidenceStore = new();
+
+    private readonly AssumptionStore _assumptionStore = new();
 
     public DuckDbCaseRepository(DuckDbConnectionFactory connectionFactory)
     {
@@ -71,6 +73,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             connection,
             ventureCase,
             cancellationToken);
+
+        // ==========================================
+        // ASSUMPTION
+        // ==========================================
+        await _assumptionStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
     }
 
     public async Task<Case?> GetByIdAsync(
@@ -119,6 +129,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             caseId,
             cancellationToken);
 
+        // ==========================================
+        // ASSUMPTION
+        // ==========================================
+        var assumptions = await _assumptionStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
         return Case.Restore(
             reader.GetGuid(reader.GetOrdinal("id")),
             reader.GetString(reader.GetOrdinal("title")),
@@ -128,7 +146,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             reader.GetDateTime(reader.GetOrdinal("updated_at_utc")),
             observations,
             evidence,
-            Array.Empty<VentureOS.Domain.Assumptions.Assumption>(),
+            assumptions,
             Array.Empty<VentureOS.Domain.Hypotheses.Hypothesis>(),
             Array.Empty<VentureOS.Domain.Challenges.Challenge>(),
             Array.Empty<VentureOS.Domain.Decisions.Decision>(),
@@ -176,6 +194,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // EVIDENCE
         // ==========================================
         await _evidenceStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // ASSUMPTIONS
+        // ==========================================
+        await _assumptionStore.ReplaceAsync(
             connection,
             ventureCase,
             cancellationToken);
