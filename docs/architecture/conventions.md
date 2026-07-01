@@ -1,22 +1,31 @@
 Domain
 
-• Technology independent
-• Static Create()
-• Static Restore()
+• Create(...)
+• Restore(...)
 • Aggregate owns mutations
+• Domain Events
+• Technology independent
 
 Application
 
-• One handler per use case
+• One Handler
 • Result<T>
 
 Infrastructure
 
-• Repository orchestrates persistence
+• Repository orchestrates
 • One Store per child collection
-• Value Object ↔ primitive conversion only here
+• Persistence conversions here only
 
 API
 
+• Minimal APIs
 • Endpoint extension per feature
-• Request DTOs live with endpoint
+• Request DTO beside endpoint
+
+Git
+
+• Build
+• Test
+• Commit
+• Push

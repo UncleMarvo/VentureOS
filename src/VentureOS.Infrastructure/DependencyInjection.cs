@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using VentureOS.Application.Cases;
 using VentureOS.Application.Cases.AddObservation;
 using VentureOS.Application.Cases.CreateAssumption;
@@ -24,6 +24,13 @@ public static class DependencyInjection
 
         services.AddSingleton<DuckDbSchemaInitializer>();
 
+        services.AddScoped<ObservationStore>();
+        services.AddScoped<EvidenceStore>();
+        services.AddScoped<AssumptionStore>();
+        services.AddScoped<HypothesisStore>();
+        services.AddScoped<ChallengeStore>();
+        services.AddScoped<DecisionStore>();
+        services.AddScoped<LessonStore>();
         services.AddScoped<ICaseRepository, DuckDbCaseRepository>();
 
         services.AddScoped<CreateCaseHandler>();

@@ -8,23 +8,32 @@ public sealed class DuckDbCaseRepository : ICaseRepository
 {
     private readonly DuckDbConnectionFactory _connectionFactory;
 
-    private readonly ObservationStore _observationStore = new();
+    private readonly ObservationStore _observationStore;
+    private readonly EvidenceStore _evidenceStore;
+    private readonly AssumptionStore _assumptionStore;
+    private readonly HypothesisStore _hypothesisStore;
+    private readonly ChallengeStore _challengeStore;
+    private readonly DecisionStore _decisionStore;
+    private readonly LessonStore _lessonStore;
 
-    private readonly EvidenceStore _evidenceStore = new();
-
-    private readonly AssumptionStore _assumptionStore = new();
-
-    private readonly HypothesisStore _hypothesisStore = new();
-
-    private readonly ChallengeStore _challengeStore = new();
-
-    private readonly DecisionStore _decisionStore = new();
-
-    private readonly LessonStore _lessonStore = new();
-
-    public DuckDbCaseRepository(DuckDbConnectionFactory connectionFactory)
+    public DuckDbCaseRepository(
+        DuckDbConnectionFactory connectionFactory,
+        ObservationStore observationStore,
+        EvidenceStore evidenceStore,
+        AssumptionStore assumptionStore,
+        HypothesisStore hypothesisStore,
+        ChallengeStore challengeStore,
+        DecisionStore decisionStore,
+        LessonStore lessonStore)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+        _observationStore = observationStore ?? throw new ArgumentNullException(nameof(observationStore));
+        _evidenceStore = evidenceStore ?? throw new ArgumentNullException(nameof(evidenceStore));
+        _assumptionStore = assumptionStore ?? throw new ArgumentNullException(nameof(assumptionStore));
+        _hypothesisStore = hypothesisStore ?? throw new ArgumentNullException(nameof(hypothesisStore));
+        _challengeStore = challengeStore ?? throw new ArgumentNullException(nameof(challengeStore));
+        _decisionStore = decisionStore ?? throw new ArgumentNullException(nameof(decisionStore));
+        _lessonStore = lessonStore ?? throw new ArgumentNullException(nameof(lessonStore));
     }
 
     public async Task AddAsync(
