@@ -66,12 +66,12 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             );
             """;
 
-        AddParameter(command, "id", ventureCase.Id);
-        AddParameter(command, "title", ventureCase.Title);
-        AddParameter(command, "mission", ventureCase.Mission);
-        AddParameter(command, "status", ventureCase.Status.ToString());
-        AddParameter(command, "created_at_utc", ventureCase.CreatedAtUtc);
-        AddParameter(command, "updated_at_utc", ventureCase.UpdatedAtUtc);
+        command.AddParameter("id", ventureCase.Id);
+        command.AddParameter("title", ventureCase.Title);
+        command.AddParameter("mission", ventureCase.Mission);
+        command.AddParameter("status", ventureCase.Status.ToString());
+        command.AddParameter("created_at_utc", ventureCase.CreatedAtUtc);
+        command.AddParameter("updated_at_utc", ventureCase.UpdatedAtUtc);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -153,7 +153,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             WHERE id = $id;
             """;
 
-        AddParameter(command, "id", caseId);
+        command.AddParameter("id", caseId);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -255,11 +255,11 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             WHERE id = $id;
             """;
 
-        AddParameter(command, "id", ventureCase.Id);
-        AddParameter(command, "title", ventureCase.Title);
-        AddParameter(command, "mission", ventureCase.Mission);
-        AddParameter(command, "status", ventureCase.Status.ToString());
-        AddParameter(command, "updated_at_utc", ventureCase.UpdatedAtUtc);
+        command.AddParameter("id", ventureCase.Id);
+        command.AddParameter("title", ventureCase.Title);
+        command.AddParameter("mission", ventureCase.Mission);
+        command.AddParameter("status", ventureCase.Status.ToString());
+        command.AddParameter("updated_at_utc", ventureCase.UpdatedAtUtc);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -318,16 +318,5 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             connection,
             ventureCase,
             cancellationToken);
-    }
-
-    private static void AddParameter(
-        IDbCommand command,
-        string name,
-        object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }
