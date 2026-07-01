@@ -12,6 +12,9 @@ using VentureOS.Application.Cases.RaiseChallenge;
 using VentureOS.Application.Cases.RecordDecision;
 using VentureOS.Application.Cases.RecordLesson;
 using VentureOS.Application.Decisions.GetDecisionContext;
+using VentureOS.Application.Research;
+using VentureOS.Application.Research.ResearchCase;
+using VentureOS.Infrastructure.AI.Ollama;
 using VentureOS.Infrastructure.Persistence.DuckDb;
 using VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
@@ -46,10 +49,16 @@ public static class DependencyInjection
         services.AddScoped<RaiseChallengeHandler>();
         services.AddScoped<RecordDecisionHandler>();
         services.AddScoped<RecordLessonHandler>();
-
         services.AddScoped<GetCaseTimelineHandler>();
         services.AddScoped<GetDecisionContextHandler>();
         services.AddScoped<GetCaseBriefHandler>();
+        services.AddScoped<ResearchCaseHandler>();
+
+        services
+            .AddHttpClient<IResearchService, OllamaResearchService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(10);
+            });
 
         return services;
     }
