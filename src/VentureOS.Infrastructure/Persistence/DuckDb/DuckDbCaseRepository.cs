@@ -16,6 +16,8 @@ public sealed class DuckDbCaseRepository : ICaseRepository
 
     private readonly HypothesisStore _hypothesisStore = new();
 
+    private readonly ChallengeStore _challengeStore = new();
+
     public DuckDbCaseRepository(DuckDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
@@ -61,7 +63,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         await command.ExecuteNonQueryAsync(cancellationToken);
 
         // ==========================================
-        // OBSERVATIONS
+        // OBSERVATION
         // ==========================================
         await _observationStore.InsertAsync(
             connection,
@@ -88,6 +90,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // HYPOTHESIS
         // ==========================================
         await _hypothesisStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // CHALLENGE
+        // ==========================================
+        await _challengeStore.InsertAsync(
             connection,
             ventureCase,
             cancellationToken);
@@ -124,7 +134,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         }
 
         // ==========================================
-        // OBSERVATIONS
+        // OBSERVATION
         // ==========================================
         var observations = await _observationStore.LoadAsync(
             connection,
@@ -155,6 +165,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             caseId,
             cancellationToken);
 
+        // ==========================================
+        // CHALLENGE
+        // ==========================================
+        var challenges = await _challengeStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
         return Case.Restore(
             reader.GetGuid(reader.GetOrdinal("id")),
             reader.GetString(reader.GetOrdinal("title")),
@@ -166,7 +184,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             evidence,
             assumptions,
             hypotheses,
-            Array.Empty<VentureOS.Domain.Challenges.Challenge>(),
+            challenges,
             Array.Empty<VentureOS.Domain.Decisions.Decision>(),
             Array.Empty<VentureOS.Domain.Lessons.Lesson>());
     }
@@ -201,7 +219,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         await command.ExecuteNonQueryAsync(cancellationToken);
 
         // ==========================================
-        // OBSERVATIONS
+        // OBSERVATION
         // ==========================================
         await _observationStore.ReplaceAsync(
             connection,
@@ -217,7 +235,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             cancellationToken);
 
         // ==========================================
-        // ASSUMPTIONS
+        // ASSUMPTION
         // ==========================================
         await _assumptionStore.ReplaceAsync(
             connection,
@@ -228,6 +246,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // HYPOTHESIS
         // ==========================================
         await _hypothesisStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // CHALLENGE
+        // ==========================================
+        await _challengeStore.ReplaceAsync(
             connection,
             ventureCase,
             cancellationToken);
