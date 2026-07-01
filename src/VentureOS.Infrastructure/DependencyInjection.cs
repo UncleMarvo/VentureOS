@@ -6,6 +6,7 @@ using VentureOS.Application.Cases.CreateCase;
 using VentureOS.Application.Cases.CreateEvidence;
 using VentureOS.Application.Cases.CreateHypothesis;
 using VentureOS.Application.Cases.GetCase;
+using VentureOS.Application.Cases.GetCaseTimeline;
 using VentureOS.Application.Cases.RaiseChallenge;
 using VentureOS.Application.Cases.RecordDecision;
 using VentureOS.Application.Cases.RecordLesson;
@@ -43,6 +44,8 @@ public static class DependencyInjection
         services.AddScoped<RaiseChallengeHandler>();
         services.AddScoped<RecordDecisionHandler>();
         services.AddScoped<RecordLessonHandler>();
+
+        services.AddScoped<GetCaseTimelineHandler>();
 
         return services;
     }
