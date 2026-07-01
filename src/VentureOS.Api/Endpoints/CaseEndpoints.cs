@@ -49,7 +49,7 @@ public static class CaseEndpoints
             });
 
         app.MapGet(
-            "/{caseId:guid}/timeline",
+            "/cases/{caseId:guid}/timeline",
             async (
                 Guid caseId,
                 GetCaseTimelineHandler handler,
