@@ -18,6 +18,8 @@ public sealed class DuckDbCaseRepository : ICaseRepository
 
     private readonly ChallengeStore _challengeStore = new();
 
+    private readonly DecisionStore _decisionStore = new();
+
     public DuckDbCaseRepository(DuckDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
@@ -101,6 +103,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             connection,
             ventureCase,
             cancellationToken);
+
+        // ==========================================
+        // DECISION
+        // ==========================================
+        await _decisionStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
     }
 
     public async Task<Case?> GetByIdAsync(
@@ -173,6 +183,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             caseId,
             cancellationToken);
 
+        // ==========================================
+        // DECISION
+        // ==========================================
+        var decisions = await _decisionStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
         return Case.Restore(
             reader.GetGuid(reader.GetOrdinal("id")),
             reader.GetString(reader.GetOrdinal("title")),
@@ -185,7 +203,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             assumptions,
             hypotheses,
             challenges,
-            Array.Empty<VentureOS.Domain.Decisions.Decision>(),
+            decisions,
             Array.Empty<VentureOS.Domain.Lessons.Lesson>());
     }
 
@@ -254,6 +272,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // CHALLENGE
         // ==========================================
         await _challengeStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // DECISION
+        // ==========================================
+        await _decisionStore.ReplaceAsync(
             connection,
             ventureCase,
             cancellationToken);
