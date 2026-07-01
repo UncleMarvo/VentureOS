@@ -1,14 +1,13 @@
 using System.Data;
-using System.Text.Json;
 using VentureOS.Domain.Cases;
+using VentureOS.Domain.Challenges;
 using VentureOS.Domain.Common;
-using VentureOS.Domain.Lessons;
 
-namespace VentureOS.Infrastructure.Persistence.DuckDb;
+namespace VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
-public sealed class LessonStore
+public sealed class ChallengeStore
 {
-    public Task<IReadOnlyCollection<Lesson>> LoadAsync(
+    public Task<IReadOnlyCollection<Challenge>> LoadAsync(
         IDbConnection connection,
         Guid caseId,
         CancellationToken cancellationToken = default)
@@ -19,41 +18,38 @@ public sealed class LessonStore
             SELECT
                 id,
                 case_id,
-                summary,
-                detail,
+                target,
+                target_id,
+                statement,
+                reasoning,
                 confidence,
-                decision_ids,
                 created_at_utc
-            FROM lessons
+            FROM challenges
             WHERE case_id = $case_id
             ORDER BY created_at_utc;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         using var reader = command.ExecuteReader();
 
-        var lessons = new List<Lesson>();
+        var challenges = new List<Challenge>();
 
         while (reader.Read())
         {
-            var decisionIds =
-                JsonSerializer.Deserialize<List<Guid>>(
-                    reader.GetString(reader.GetOrdinal("decision_ids")))
-                ?? new List<Guid>();
-
-            lessons.Add(
-                Lesson.Restore(
+            challenges.Add(
+                Challenge.Restore(
                     reader.GetGuid(reader.GetOrdinal("id")),
                     reader.GetGuid(reader.GetOrdinal("case_id")),
-                    reader.GetString(reader.GetOrdinal("summary")),
-                    reader.GetString(reader.GetOrdinal("detail")),
+                    Enum.Parse<ChallengeTarget>(reader.GetString(reader.GetOrdinal("target"))),
+                    reader.GetGuid(reader.GetOrdinal("target_id")),
+                    reader.GetString(reader.GetOrdinal("statement")),
+                    reader.GetString(reader.GetOrdinal("reasoning")),
                     Confidence.FromPercentage(int.Parse(reader.GetString(reader.GetOrdinal("confidence")))),
-                    decisionIds,
                     reader.GetDateTime(reader.GetOrdinal("created_at_utc"))));
         }
 
-        return Task.FromResult<IReadOnlyCollection<Lesson>>(lessons);
+        return Task.FromResult<IReadOnlyCollection<Challenge>>(challenges);
     }
 
     public async Task ReplaceAsync(
@@ -70,38 +66,41 @@ public sealed class LessonStore
         Case ventureCase,
         CancellationToken cancellationToken = default)
     {
-        foreach (var lesson in ventureCase.Lessons)
+        foreach (var challenge in ventureCase.Challenges)
         {
             using var command = connection.CreateCommand();
 
             command.CommandText = """
-                INSERT INTO lessons (
+                INSERT INTO challenges (
                     id,
                     case_id,
-                    summary,
-                    detail,
+                    target,
+                    target_id,
+                    statement,
+                    reasoning,
                     confidence,
-                    decision_ids,
                     created_at_utc
                 )
                 VALUES (
                     $id,
                     $case_id,
-                    $summary,
-                    $detail,
+                    $target,
+                    $target_id,
+                    $statement,
+                    $reasoning,
                     $confidence,
-                    $decision_ids,
                     $created_at_utc
                 );
                 """;
 
-            AddParameter(command, "id", lesson.Id);
-            AddParameter(command, "case_id", lesson.CaseId);
-            AddParameter(command, "summary", lesson.Summary);
-            AddParameter(command, "detail", lesson.Detail);
-            AddParameter(command, "confidence", lesson.Confidence.Value);
-            AddParameter(command, "decision_ids", JsonSerializer.Serialize(lesson.DecisionIds));
-            AddParameter(command, "created_at_utc", lesson.CreatedAtUtc);
+            command.AddParameter("id", challenge.Id);
+            command.AddParameter("case_id", challenge.CaseId);
+            command.AddParameter("target", challenge.Target.ToString());
+            command.AddParameter("target_id", challenge.TargetId);
+            command.AddParameter("statement", challenge.Statement);
+            command.AddParameter("reasoning", challenge.Reasoning);
+            command.AddParameter("confidence", challenge.Confidence.Value);
+            command.AddParameter("created_at_utc", challenge.CreatedAtUtc);
 
             command.ExecuteNonQuery();
         }
@@ -117,25 +116,14 @@ public sealed class LessonStore
         using var command = connection.CreateCommand();
 
         command.CommandText = """
-            DELETE FROM lessons
+            DELETE FROM challenges
             WHERE case_id = $case_id;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         command.ExecuteNonQuery();
 
         return Task.CompletedTask;
-    }
-
-    private static void AddParameter(
-        IDbCommand command,
-        string name,
-        object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

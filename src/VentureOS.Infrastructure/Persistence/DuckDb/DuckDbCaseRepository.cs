@@ -1,6 +1,7 @@
 using System.Data;
 using VentureOS.Application.Cases;
 using VentureOS.Domain.Cases;
+using VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
 namespace VentureOS.Infrastructure.Persistence.DuckDb;
 

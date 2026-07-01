@@ -4,7 +4,7 @@ using VentureOS.Domain.Cases;
 using VentureOS.Domain.Common;
 using VentureOS.Domain.Decisions;
 
-namespace VentureOS.Infrastructure.Persistence.DuckDb;
+namespace VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
 public sealed class DecisionStore
 {
@@ -34,7 +34,7 @@ public sealed class DecisionStore
             ORDER BY created_at_utc;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         using var reader = command.ExecuteReader();
 
@@ -130,18 +130,18 @@ public sealed class DecisionStore
                 );
                 """;
 
-            AddParameter(command, "id", decision.Id);
-            AddParameter(command, "case_id", decision.CaseId);
-            AddParameter(command, "question", decision.Question);
-            AddParameter(command, "outcome", decision.Outcome.ToString());
-            AddParameter(command, "rationale", decision.Rationale);
-            AddParameter(command, "expected_outcome", decision.ExpectedOutcome);
-            AddParameter(command, "confidence", decision.Confidence.Value);
-            AddParameter(command, "evidence_ids", JsonSerializer.Serialize(decision.EvidenceIds));
-            AddParameter(command, "assumption_ids", JsonSerializer.Serialize(decision.AssumptionIds));
-            AddParameter(command, "hypothesis_ids", JsonSerializer.Serialize(decision.HypothesisIds));
-            AddParameter(command, "challenge_ids", JsonSerializer.Serialize(decision.ChallengeIds));
-            AddParameter(command, "created_at_utc", decision.CreatedAtUtc);
+            command.AddParameter("id", decision.Id);
+            command.AddParameter("case_id", decision.CaseId);
+            command.AddParameter("question", decision.Question);
+            command.AddParameter("outcome", decision.Outcome.ToString());
+            command.AddParameter("rationale", decision.Rationale);
+            command.AddParameter("expected_outcome", decision.ExpectedOutcome);
+            command.AddParameter("confidence", decision.Confidence.Value);
+            command.AddParameter("evidence_ids", JsonSerializer.Serialize(decision.EvidenceIds));
+            command.AddParameter("assumption_ids", JsonSerializer.Serialize(decision.AssumptionIds));
+            command.AddParameter("hypothesis_ids", JsonSerializer.Serialize(decision.HypothesisIds));
+            command.AddParameter("challenge_ids", JsonSerializer.Serialize(decision.ChallengeIds));
+            command.AddParameter("created_at_utc", decision.CreatedAtUtc);
 
             command.ExecuteNonQuery();
         }
@@ -161,21 +161,10 @@ public sealed class DecisionStore
             WHERE case_id = $case_id;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         command.ExecuteNonQuery();
 
         return Task.CompletedTask;
-    }
-
-    private static void AddParameter(
-        IDbCommand command,
-        string name,
-        object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

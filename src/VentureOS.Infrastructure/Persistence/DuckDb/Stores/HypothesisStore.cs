@@ -4,7 +4,7 @@ using VentureOS.Domain.Cases;
 using VentureOS.Domain.Common;
 using VentureOS.Domain.Hypotheses;
 
-namespace VentureOS.Infrastructure.Persistence.DuckDb;
+namespace VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
 public sealed class HypothesisStore
 {
@@ -34,7 +34,7 @@ public sealed class HypothesisStore
             ORDER BY created_at_utc;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         using var reader = command.ExecuteReader();
 
@@ -120,18 +120,18 @@ public sealed class HypothesisStore
                 );
                 """;
 
-            AddParameter(command, "id", hypothesis.Id);
-            AddParameter(command, "case_id", hypothesis.CaseId);
-            AddParameter(command, "statement", hypothesis.Statement);
-            AddParameter(command, "reasoning", hypothesis.Reasoning);
-            AddParameter(command, "expected_outcome", hypothesis.ExpectedOutcome);
-            AddParameter(command, "success_criteria", hypothesis.SuccessCriteria);
-            AddParameter(command, "confidence", hypothesis.Confidence.Value);
-            AddParameter(command, "evidence_ids", JsonSerializer.Serialize(hypothesis.EvidenceIds));
-            AddParameter(command, "assumption_ids", JsonSerializer.Serialize(hypothesis.AssumptionIds));
-            AddParameter(command, "status", hypothesis.Status.ToString());
-            AddParameter(command, "created_at_utc", hypothesis.CreatedAtUtc);
-            AddParameter(command, "updated_at_utc", hypothesis.UpdatedAtUtc);
+            command.AddParameter("id", hypothesis.Id);
+            command.AddParameter("case_id", hypothesis.CaseId);
+            command.AddParameter("statement", hypothesis.Statement);
+            command.AddParameter("reasoning", hypothesis.Reasoning);
+            command.AddParameter("expected_outcome", hypothesis.ExpectedOutcome);
+            command.AddParameter("success_criteria", hypothesis.SuccessCriteria);
+            command.AddParameter("confidence", hypothesis.Confidence.Value);
+            command.AddParameter("evidence_ids", JsonSerializer.Serialize(hypothesis.EvidenceIds));
+            command.AddParameter("assumption_ids", JsonSerializer.Serialize(hypothesis.AssumptionIds));
+            command.AddParameter("status", hypothesis.Status.ToString());
+            command.AddParameter("created_at_utc", hypothesis.CreatedAtUtc);
+            command.AddParameter("updated_at_utc", hypothesis.UpdatedAtUtc);
 
             command.ExecuteNonQuery();
         }
@@ -151,21 +151,10 @@ public sealed class HypothesisStore
             WHERE case_id = $case_id;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         command.ExecuteNonQuery();
 
         return Task.CompletedTask;
-    }
-
-    private static void AddParameter(
-        IDbCommand command,
-        string name,
-        object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

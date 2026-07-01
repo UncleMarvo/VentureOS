@@ -1,9 +1,9 @@
-﻿using System.Data;
+using System.Data;
 using VentureOS.Domain.Cases;
 using VentureOS.Domain.Common;
 using VentureOS.Domain.Observations;
 
-namespace VentureOS.Infrastructure.Persistence.DuckDb;
+namespace VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
 public sealed class ObservationStore
 {
@@ -29,7 +29,7 @@ public sealed class ObservationStore
             ORDER BY created_at_utc;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         using var reader = command.ExecuteReader();
 
@@ -93,14 +93,14 @@ public sealed class ObservationStore
                 );
                 """;
 
-            AddParameter(command, "id", observation.Id);
-            AddParameter(command, "case_id", observation.CaseId);
-            AddParameter(command, "observation_text", observation.ObservationText);
-            AddParameter(command, "summary", observation.Summary);
-            AddParameter(command, "source_reference", observation.SourceReference);
-            AddParameter(command, "observation_source", observation.ObservationSource.ToString());
-            AddParameter(command, "confidence", observation.Confidence.Value);
-            AddParameter(command, "created_at_utc", observation.CreatedAtUtc);
+            command.AddParameter("id", observation.Id);
+            command.AddParameter("case_id", observation.CaseId);
+            command.AddParameter("observation_text", observation.ObservationText);
+            command.AddParameter("summary", observation.Summary);
+            command.AddParameter("source_reference", observation.SourceReference);
+            command.AddParameter("observation_source", observation.ObservationSource.ToString());
+            command.AddParameter("confidence", observation.Confidence.Value);
+            command.AddParameter("created_at_utc", observation.CreatedAtUtc);
 
             command.ExecuteNonQuery();
         }
@@ -120,21 +120,10 @@ public sealed class ObservationStore
             WHERE case_id = $case_id;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         command.ExecuteNonQuery();
 
         return Task.CompletedTask;
-    }
-
-    private static void AddParameter(
-        IDbCommand command,
-        string name,
-        object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

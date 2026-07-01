@@ -1,9 +1,9 @@
-﻿using System.Data;
+using System.Data;
 using System.Text.Json;
 using VentureOS.Domain.Cases;
 using VentureOS.Domain.Evidence;
 
-namespace VentureOS.Infrastructure.Persistence.DuckDb;
+namespace VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
 public sealed class EvidenceStore
 {
@@ -28,7 +28,7 @@ public sealed class EvidenceStore
             ORDER BY created_at_utc;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         using var reader = command.ExecuteReader();
 
@@ -97,16 +97,13 @@ public sealed class EvidenceStore
                 );
                 """;
 
-            AddParameter(command, "id", evidence.Id);
-            AddParameter(command, "case_id", evidence.CaseId);
-            AddParameter(command, "summary", evidence.Summary);
-            AddParameter(command, "interpretation", evidence.Interpretation);
-            AddParameter(command, "direction", evidence.Direction.ToString());
-            AddParameter(
-                command,
-                "observation_ids",
-                JsonSerializer.Serialize(evidence.ObservationIds));
-            AddParameter(command, "created_at_utc", evidence.CreatedAtUtc);
+            command.AddParameter("id", evidence.Id);
+            command.AddParameter("case_id", evidence.CaseId);
+            command.AddParameter("summary", evidence.Summary);
+            command.AddParameter("interpretation", evidence.Interpretation);
+            command.AddParameter("direction", evidence.Direction.ToString());
+            command.AddParameter("observation_ids", JsonSerializer.Serialize(evidence.ObservationIds));
+            command.AddParameter("created_at_utc", evidence.CreatedAtUtc);
 
             command.ExecuteNonQuery();
         }
@@ -126,21 +123,10 @@ public sealed class EvidenceStore
             WHERE case_id = $case_id;
             """;
 
-        AddParameter(command, "case_id", caseId);
+        command.AddParameter("case_id", caseId);
 
         command.ExecuteNonQuery();
 
         return Task.CompletedTask;
-    }
-
-    private static void AddParameter(
-        IDbCommand command,
-        string name,
-        object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

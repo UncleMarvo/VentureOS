@@ -10,6 +10,7 @@ using VentureOS.Application.Cases.RaiseChallenge;
 using VentureOS.Application.Cases.RecordDecision;
 using VentureOS.Application.Cases.RecordLesson;
 using VentureOS.Infrastructure.Persistence.DuckDb;
+using VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
 namespace VentureOS.Infrastructure;
 
