@@ -10,6 +10,7 @@ using VentureOS.Application.Cases.GetCaseTimeline;
 using VentureOS.Application.Cases.RaiseChallenge;
 using VentureOS.Application.Cases.RecordDecision;
 using VentureOS.Application.Cases.RecordLesson;
+using VentureOS.Application.Decisions.GetDecisionContext;
 using VentureOS.Infrastructure.Persistence.DuckDb;
 using VentureOS.Infrastructure.Persistence.DuckDb.Stores;
 
@@ -46,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<RecordLessonHandler>();
 
         services.AddScoped<GetCaseTimelineHandler>();
+        services.AddScoped<GetDecisionContextHandler>();
 
         return services;
     }

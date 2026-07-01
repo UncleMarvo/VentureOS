@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using VentureOS.Application.Cases.RecordDecision;
+using VentureOS.Application.Decisions.GetDecisionContext;
 using VentureOS.Domain.Common;
 using VentureOS.Domain.Decisions;
 
@@ -42,6 +43,23 @@ public static class DecisionEndpoints
                 return Results.Created(
                     $"/cases/{result.Value.CaseId}/decisions/{result.Value.DecisionId}",
                     result.Value);
+            });
+
+        app.MapGet(
+            "/cases/{caseId:guid}/decisions/{decisionId:guid}/context",
+            async (
+                Guid caseId,
+                Guid decisionId,
+                GetDecisionContextHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await handler.HandleAsync(
+                    new GetDecisionContextQuery(caseId, decisionId),
+                    cancellationToken);
+
+                return result.IsSuccess
+                    ? Results.Ok(result.Value)
+                    : Results.NotFound(result.Error);
             });
 
         return app;
