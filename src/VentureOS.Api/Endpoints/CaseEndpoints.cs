@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using VentureOS.Application.Cases.CreateCase;
 using VentureOS.Application.Cases.GetCase;
+using VentureOS.Application.Cases.GetCaseBrief;
 using VentureOS.Application.Cases.GetCaseTimeline;
 
 namespace VentureOS.Api.Endpoints;
@@ -63,6 +64,23 @@ public static class CaseEndpoints
                     ? Results.Ok(result.Value)
                     : Results.NotFound(result.Error);
             });
+
+        app.MapGet(
+            "/cases/{caseId:guid}/brief",
+            async (
+                Guid caseId,
+                GetCaseBriefHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await handler.HandleAsync(
+                    new GetCaseBriefQuery(caseId),
+                    cancellationToken);
+
+                return result.IsSuccess
+                    ? Results.Ok(result.Value)
+                    : Results.NotFound(result.Error);
+            });
+
 
         return app;
     }
