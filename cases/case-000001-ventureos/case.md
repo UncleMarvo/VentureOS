@@ -2,7 +2,7 @@
 
 ## Status
 
-Discovery
+Build
 
 ---
 
@@ -38,7 +38,7 @@ Founding Board
 
 ## Current Phase
 
-Foundation
+Minimum Foundation Platform
 
 ---
 
@@ -113,16 +113,16 @@ The implementation remains largely unexplored.
 
 ## Current Status Summary
 
-The project is currently establishing its constitutional, philosophical and architectural foundations.
+The Domain, Application, Infrastructure and API layers are implemented in .NET 9 on DuckDB, covering the full reasoning chain: Case, Observation, Evidence, Assumption, Opportunity, Hypothesis, Challenge, Decision and Lesson.
 
-No implementation work has begun.
+Venture research is generated through a four-stage AI pipeline — Research Planning, Evidence Acquisition, Research Analysis and Research Extraction — each an independently swappable capability, followed by automated quality checks and human review before any AI proposal is accepted into the Domain.
 
-This is intentional.
+Test coverage exists across two projects, covering Domain behaviour and Application-layer research quality checks.
 
-The Founding Board believes that long-term organisational design should precede technical implementation.
+Red Team Review and Board Review are not yet built. Until they exist, the reasoning chain stops at Decision without a governance capability actively challenging or reviewing it.
 
 ---
 
 ## Next Milestone
 
-Ratify the VentureOS Object Model.
+Build the Red Team Review capability.
