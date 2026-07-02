@@ -17,15 +17,18 @@ public sealed class OllamaResearchService : IResearchService
 {
     private readonly HttpClient _httpClient;
     private readonly OllamaOptions _options;
+    private readonly IResearchPlanningService _researchPlanningService;
     private readonly IEvidenceAcquisitionService _evidenceAcquisitionService;
 
     public OllamaResearchService(
         HttpClient httpClient,
         IOptions<OllamaOptions> options,
+        IResearchPlanningService researchPlanningService,
         IEvidenceAcquisitionService evidenceAcquisitionService)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _researchPlanningService = researchPlanningService;
         _evidenceAcquisitionService = evidenceAcquisitionService;
 
         _httpClient.BaseAddress = new Uri(_options.BaseUrl);
@@ -37,52 +40,14 @@ public sealed class OllamaResearchService : IResearchService
     {
         var stopwatch = Stopwatch.StartNew();
 
-        Console.WriteLine($"Using Ollama model: {_options.Model}");
-
-        var evidencePlanPrompt = ResearchEvidencePlanningPrompt.Build(ventureCase);
-        var evidencePlanJson = await GenerateAsync(
-            evidencePlanPrompt,
+        var evidencePlan = await _researchPlanningService.PlanResearchAsync(
+            ventureCase,
             cancellationToken);
-
-        var evidencePlan = JsonSerializer.Deserialize<ResearchEvidencePlanDto>(
-            evidencePlanJson,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-        Console.WriteLine("========================================");
-        Console.WriteLine("EVIDENCE PLAN");
-        Console.WriteLine("========================================");
-        Console.WriteLine(
-            JsonSerializer.Serialize(
-                evidencePlan,
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                }));
-
-        if (evidencePlan is null)
-        {
-            throw new InvalidOperationException("Failed to deserialize Ollama evidence plan response.");
-        }
 
         var acquiredEvidence = await _evidenceAcquisitionService.AcquireEvidenceAsync(
             ventureCase.Id,
             evidencePlan.Questions,
             cancellationToken);
-
-        Console.WriteLine("========================================");
-        Console.WriteLine("ACQUIRED EVIDENCE");
-        Console.WriteLine("========================================");
-
-        Console.WriteLine(
-            JsonSerializer.Serialize(
-                acquiredEvidence,
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                }));
 
         var analysisPrompt = ResearchAnalysisPrompt.Build(
             ventureCase,
