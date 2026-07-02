@@ -41,9 +41,22 @@ Added `tests/VentureOS.Application.Tests/Board/BoardDossierAssemblerTests.cs` (9
 
 Checked directly against `docs/roadmap/minimun-foundation-platform_v1.1.md`'s own Success Definition ("a single user can investigate a venture from initial idea through to a fully auditable Board decision") and Definition of Done (ends at "a decision is recorded... reasoning remains permanently auditable"). Both are satisfied now: Case, Research, Evidence, Hypotheses, Challenge, Board Review, and Decision recording all exist and are wired end to end. `Action`/`Outcome` appear only in the roadmap's pipeline diagram, never in its Core Capabilities or Definition of Done — their absence is a deliberate, out-of-v1.1-scope gap, not an oversight, and should not be quietly built "to complete the diagram" without a deliberate decision to expand v1.1's scope first.
 
+## End-to-end verification (done this phase, after the sections above were written)
+
+The full loop was run live against a real Case with a live local Ollama instance (`qwen3:8b`, CPU inference): Create Case → Research deep-dive → accept → Red Team review → accept → Board Review → record Decision → verify via timeline. Every request/response shape in this handover and in `docs/testing/e2e-postman-guide.md` was captured from that real run, not hand-typed. Notable results, not just "it worked":
+
+* Red Team correctly copied a real Evidence Guid verbatim and raised one specific, well-reasoned challenge with zero quality issues — the Guid-targeting reliability risk flagged earlier in this document did not materialize in this run (one data point, not a statistical claim — still worth empirical tuning over more runs).
+* Board's narrative referenced zero identifiers, as designed, and returned exactly the 4 fixed `DecisionOptions` in the required order.
+* The full timeline shows one entry per created Observation/Evidence/Assumption/Opportunity/Hypothesis/Challenge/Decision, in order, ending with the recorded Decision — the audit trail the Constitution requires actually holds up end to end.
+
+**`docs/testing/e2e-postman-guide.md` now exists** as a repeatable Postman walkthrough of this exact sequence, including realistic timing expectations (~10 min for Research, ~3 min for Red Team, ~1.5 min for Board on CPU inference) and a troubleshooting section. Use it rather than re-deriving the request shapes from source when demonstrating or re-verifying the loop.
+
+One side effect worth knowing about: this verification run's test case ("AI-Powered Meeting Notes SaaS") was created against the real local `src/VentureOS.Api/data/ventureos.duckdb`, which is tracked in git (a pre-existing project convention, not introduced this phase) — that test case is now committed to `origin/main`'s copy of the file. Harmless, but if a clean database is ever expected, this is why it isn't.
+
 ## Immediate Goal
 
-There is no more MFP-mandated capability left to build. The next session should:
+MFP v1.1 is now confirmed complete both on paper and in practice — there is no more MFP-mandated capability left to build, and the full loop has been demonstrated end to end, not just unit-tested in isolation. The next session should decide, with the user, between:
 
-1. **Actually run the full loop end to end** against a real case with a live Ollama instance (Case → Research → accept → Red Team → accept → Board Review → read briefing → record Decision) — every capability has been unit-tested and build-verified in isolation, but the full chain has not been exercised together this phase. Confirm the pipeline actually works before treating MFP v1.1 as done in practice, not just on paper.
-2. Then decide, with the user, between: closing the Action/Outcome loop (a deliberate scope expansion, not implied by v1.1), addressing the known Domain gaps listed above, or moving toward the Project Charter's "smallest commercially valuable slice" per its Roadmap A vs. Roadmap B framing ("Runway wins").
+1. Closing the Action/Outcome loop (a deliberate scope expansion, not implied by v1.1).
+2. Addressing the known Domain gaps listed above (Assumption/Hypothesis/Opportunity status transitions never exercised by any endpoint; `Decision`↔`Opportunity` cross-referencing; `ChallengeTarget.Decision` still dead; Red Team's Guid-targeting reliability, still only lightly tested).
+3. Moving toward the Project Charter's "smallest commercially valuable slice" per its Roadmap A vs. Roadmap B framing ("Runway wins").
