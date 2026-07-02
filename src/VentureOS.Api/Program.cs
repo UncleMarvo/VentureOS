@@ -38,6 +38,7 @@ app.MapLessonEndpoints();
 
 app.MapResearchEndpoints();
 app.MapRedTeamEndpoints();
+app.MapBoardEndpoints();
 
 app.Run();
 
