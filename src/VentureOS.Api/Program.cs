@@ -30,6 +30,7 @@ app.MapCaseEndpoints();
 app.MapEvidenceEndpoints();
 app.MapObservationEndpoints();
 app.MapAssumptionEndpoints();
+app.MapOpportunityEndpoints();
 app.MapHypothesisEndpoints();
 app.MapChallengeEndpoints();
 app.MapDecisionEndpoints();

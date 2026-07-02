@@ -64,6 +64,18 @@ public sealed class GetCaseTimelineHandler
                     assumption.CreatedAtUtc)));
 
         // ========================
+        // OPPORTUNITY
+        // ========================
+        items.AddRange(
+            ventureCase.Opportunities.Select(opportunity =>
+                new CaseTimelineItemDto(
+                    opportunity.Id,
+                    CaseTimelineItemType.Opportunity,
+                    opportunity.Statement,
+                    opportunity.CustomerValue,
+                    opportunity.CreatedAtUtc)));
+
+        // ========================
         // HYPOTHESIS
         // ========================
         items.AddRange(

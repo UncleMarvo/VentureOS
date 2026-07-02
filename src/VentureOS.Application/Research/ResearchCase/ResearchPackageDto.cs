@@ -7,6 +7,7 @@ public sealed record ResearchPackageDto(
     IReadOnlyList<ProposedObservationDto> Observations,
     IReadOnlyList<ProposedEvidenceDto> Evidence,
     IReadOnlyList<ProposedAssumptionDto> Assumptions,
+    IReadOnlyList<ProposedOpportunityDto> Opportunities,
     IReadOnlyList<ProposedHypothesisDto> Hypotheses,
     IReadOnlyList<ProposedChallengeDto> Challenges);
 
@@ -26,6 +27,16 @@ public sealed record ProposedAssumptionDto(
     string Statement,
     string Rationale,
     int Confidence);
+
+public sealed record ProposedOpportunityDto(
+    string Statement,
+    string CustomerValue,
+    string CommercialValue,
+    string Differentiation,
+    string Timing,
+    int Confidence,
+    IReadOnlyList<int> EvidenceIndexes,
+    IReadOnlyList<int> AssumptionIndexes);
 
 public sealed record ProposedHypothesisDto(
     string Statement,

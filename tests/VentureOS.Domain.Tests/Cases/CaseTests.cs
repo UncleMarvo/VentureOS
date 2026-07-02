@@ -5,6 +5,7 @@ using VentureOS.Domain.Evidence;
 using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Observations;
 using VentureOS.Domain.Assumptions;
+using VentureOS.Domain.Opportunities;
 using VentureOS.Domain.Challenges;
 using VentureOS.Domain.Decisions;
 using VentureOS.Domain.Lessons;
@@ -693,6 +694,472 @@ public sealed class CaseTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("Hypothesis cannot reference assumptions that do not belong to the case.", result.Error);
+    }
+
+    // ======================================
+    // OPPORTUNITY TESTS
+    // ======================================
+    [Fact]
+    public void CreateOpportunity_WithValidDetails_CreatesOpportunity()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+        var assumptionId = CreateValidAssumption(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Opportunity to automate document chasing for small accounting firms.",
+                "Frees up accountants' time spent chasing client documents.",
+                "Recurring subscription revenue from a large addressable market of small firms.",
+                "Purpose-built for accountants rather than a generic automation tool.",
+                "Accounting firms are actively adopting automation post cost-of-living pressure.",
+                Confidence.FromPercentage(55),
+                [evidenceId],
+                [assumptionId]));
+
+        Assert.True(result.IsSuccess);
+
+        var opportunity = Assert.Single(ventureCase.Opportunities);
+
+        Assert.Equal(ventureCase.Id, opportunity.CaseId);
+        Assert.Equal("Opportunity to automate document chasing for small accounting firms.", opportunity.Statement);
+        Assert.Equal("Frees up accountants' time spent chasing client documents.", opportunity.CustomerValue);
+        Assert.Equal("Recurring subscription revenue from a large addressable market of small firms.", opportunity.CommercialValue);
+        Assert.Equal("Purpose-built for accountants rather than a generic automation tool.", opportunity.Differentiation);
+        Assert.Equal("Accounting firms are actively adopting automation post cost-of-living pressure.", opportunity.Timing);
+        Assert.Equal(55, opportunity.Confidence.Value);
+        Assert.Contains(evidenceId, opportunity.EvidenceIds);
+        Assert.Contains(assumptionId, opportunity.AssumptionIds);
+        Assert.Equal(OpportunityStatus.Proposed, opportunity.Status);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithEmptyStatement_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity statement is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithEmptyCustomerValue_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity customer value is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithEmptyCommercialValue_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity commercial value is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithEmptyDifferentiation_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity differentiation is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithEmptyTiming_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity timing is required.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithNoEvidenceIds_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity must reference at least one piece of evidence.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithUnknownEvidenceId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [Guid.NewGuid()],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity cannot reference evidence that does not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithEmptyAssumptionIds_CreatesOpportunity()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value.AssumptionIds);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithUnknownAssumptionId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                [Guid.NewGuid()]));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Opportunity cannot reference assumptions that do not belong to the case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WhenCaseArchived_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        ventureCase.Archive();
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Cannot create opportunities for an archived case.", result.Error);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithDuplicateEvidenceIds_StoresDistinctEvidenceIds()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId, evidenceId],
+                []));
+
+        Assert.True(result.IsSuccess);
+
+        var opportunity = Assert.Single(ventureCase.Opportunities);
+
+        Assert.Single(opportunity.EvidenceIds);
+    }
+
+    [Fact]
+    public void CreateOpportunity_WithValidDetails_RaisesOpportunityCreatedDomainEvent()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        ventureCase.ClearDomainEvents();
+
+        var result = ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing.",
+                Confidence.FromPercentage(50),
+                [evidenceId],
+                []));
+
+        Assert.True(result.IsSuccess);
+
+        var domainEvent = Assert.Single(ventureCase.DomainEvents);
+
+        Assert.IsType<OpportunityCreatedEvent>(domainEvent);
+    }
+
+    [Fact]
+    public void Opportunity_MarkSupported_ChangesStatusToSupported()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        var result = opportunity.MarkSupported();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OpportunityStatus.Supported, opportunity.Status);
+    }
+
+    [Fact]
+    public void Opportunity_MarkChallenged_ChangesStatusToChallenged()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        var result = opportunity.MarkChallenged();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OpportunityStatus.Challenged, opportunity.Status);
+    }
+
+    [Fact]
+    public void Opportunity_Accept_ChangesStatusToAccepted()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        var result = opportunity.Accept();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OpportunityStatus.Accepted, opportunity.Status);
+    }
+
+    [Fact]
+    public void Opportunity_Reject_ChangesStatusToRejected()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        var result = opportunity.Reject();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OpportunityStatus.Rejected, opportunity.Status);
+    }
+
+    [Fact]
+    public void Opportunity_Supersede_ChangesStatusToSuperseded()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        var result = opportunity.Supersede();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OpportunityStatus.Superseded, opportunity.Status);
+    }
+
+    [Fact]
+    public void Opportunity_MarkSupported_WhenRejected_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        opportunity.Reject();
+
+        var result = opportunity.MarkSupported();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Rejected or superseded opportunities cannot be marked as supported.", result.Error);
+    }
+
+    [Fact]
+    public void Opportunity_MarkChallenged_WhenSuperseded_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        opportunity.Supersede();
+
+        var result = opportunity.MarkChallenged();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Rejected or superseded opportunities cannot be challenged.", result.Error);
+    }
+
+    [Fact]
+    public void Opportunity_Accept_WhenRejected_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        opportunity.Reject();
+
+        var result = opportunity.Accept();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Rejected opportunities cannot be accepted.", result.Error);
+    }
+
+    [Fact]
+    public void Opportunity_Reject_WhenAccepted_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        opportunity.Accept();
+
+        var result = opportunity.Reject();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Accepted opportunities cannot be rejected.", result.Error);
+    }
+
+    [Fact]
+    public void Opportunity_Supersede_WhenAccepted_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        opportunity.Accept();
+
+        var result = opportunity.Supersede();
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Accepted opportunities cannot be superseded.", result.Error);
+    }
+
+    [Fact]
+    public void RaiseChallenge_AgainstOpportunity_WithValidDraft_CreatesChallenge()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+        var opportunity = CreateValidOpportunity(ventureCase);
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Opportunity,
+                opportunity.Id,
+                "The commercial value may be overstated.",
+                "No pricing evidence yet supports the assumed commercial value.",
+                Confidence.FromPercentage(60)));
+
+        Assert.True(result.IsSuccess);
+
+        var challenge = Assert.Single(ventureCase.Challenges);
+
+        Assert.Equal(ChallengeTarget.Opportunity, challenge.Target);
+        Assert.Equal(opportunity.Id, challenge.TargetId);
+    }
+
+    [Fact]
+    public void RaiseChallenge_AgainstOpportunity_WithUnknownTargetId_ReturnsFailure()
+    {
+        var ventureCase = Case.Create("Valid title", "Valid mission.").Value;
+
+        var result = ventureCase.RaiseChallenge(
+            new ChallengeDraft(
+                ChallengeTarget.Opportunity,
+                Guid.NewGuid(),
+                "Valid statement.",
+                "Valid reasoning.",
+                Confidence.FromPercentage(50)));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Challenge target does not belong to the case.", result.Error);
     }
 
     // ======================================
@@ -1405,6 +1872,24 @@ public sealed class CaseTests
                 [assumptionId]));
 
         return ventureCase.Hypotheses.Last();
+    }
+
+    private static Opportunity CreateValidOpportunity(Case ventureCase)
+    {
+        var evidenceId = CreateValidEvidence(ventureCase);
+
+        ventureCase.CreateOpportunity(
+            new OpportunityDraft(
+                "Valid opportunity statement.",
+                "Valid customer value.",
+                "Valid commercial value.",
+                "Valid differentiation.",
+                "Valid timing considerations.",
+                Confidence.FromPercentage(55),
+                [evidenceId],
+                []));
+
+        return ventureCase.Opportunities.Last();
     }
 
     private static Guid CreateValidEvidence(Case ventureCase)

@@ -5,6 +5,7 @@ public enum CaseTimelineItemType
     Observation,
     Evidence,
     Assumption,
+    Opportunity,
     Hypothesis,
     Challenge,
     Decision,

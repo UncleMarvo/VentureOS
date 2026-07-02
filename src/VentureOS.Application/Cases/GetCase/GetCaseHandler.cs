@@ -35,6 +35,7 @@ public sealed class GetCaseHandler
                 ventureCase.Observations.Count,
                 ventureCase.Evidence.Count,
                 ventureCase.Assumptions.Count,
+                ventureCase.Opportunities.Count,
                 ventureCase.Hypotheses.Count,
                 ventureCase.Challenges.Count,
                 ventureCase.Decisions.Count,

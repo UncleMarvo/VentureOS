@@ -12,6 +12,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
     private readonly ObservationStore _observationStore;
     private readonly EvidenceStore _evidenceStore;
     private readonly AssumptionStore _assumptionStore;
+    private readonly OpportunityStore _opportunityStore;
     private readonly HypothesisStore _hypothesisStore;
     private readonly ChallengeStore _challengeStore;
     private readonly DecisionStore _decisionStore;
@@ -22,6 +23,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         ObservationStore observationStore,
         EvidenceStore evidenceStore,
         AssumptionStore assumptionStore,
+        OpportunityStore opportunityStore,
         HypothesisStore hypothesisStore,
         ChallengeStore challengeStore,
         DecisionStore decisionStore,
@@ -31,6 +33,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         _observationStore = observationStore ?? throw new ArgumentNullException(nameof(observationStore));
         _evidenceStore = evidenceStore ?? throw new ArgumentNullException(nameof(evidenceStore));
         _assumptionStore = assumptionStore ?? throw new ArgumentNullException(nameof(assumptionStore));
+        _opportunityStore = opportunityStore ?? throw new ArgumentNullException(nameof(opportunityStore));
         _hypothesisStore = hypothesisStore ?? throw new ArgumentNullException(nameof(hypothesisStore));
         _challengeStore = challengeStore ?? throw new ArgumentNullException(nameof(challengeStore));
         _decisionStore = decisionStore ?? throw new ArgumentNullException(nameof(decisionStore));
@@ -96,6 +99,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // ASSUMPTION
         // ==========================================
         await _assumptionStore.InsertAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // OPPORTUNITY
+        // ==========================================
+        await _opportunityStore.InsertAsync(
             connection,
             ventureCase,
             cancellationToken);
@@ -188,6 +199,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             cancellationToken);
 
         // ==========================================
+        // OPPORTUNITY
+        // ==========================================
+        var opportunities = await _opportunityStore.LoadAsync(
+            connection,
+            caseId,
+            cancellationToken);
+
+        // ==========================================
         // HYPOTHESIS
         // ==========================================
         var hypotheses = await _hypothesisStore.LoadAsync(
@@ -229,6 +248,7 @@ public sealed class DuckDbCaseRepository : ICaseRepository
             observations,
             evidence,
             assumptions,
+            opportunities,
             hypotheses,
             challenges,
             decisions,
@@ -284,6 +304,14 @@ public sealed class DuckDbCaseRepository : ICaseRepository
         // ASSUMPTION
         // ==========================================
         await _assumptionStore.ReplaceAsync(
+            connection,
+            ventureCase,
+            cancellationToken);
+
+        // ==========================================
+        // OPPORTUNITY
+        // ==========================================
+        await _opportunityStore.ReplaceAsync(
             connection,
             ventureCase,
             cancellationToken);

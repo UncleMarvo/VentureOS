@@ -4,6 +4,7 @@ using VentureOS.Domain.Observations;
 using VentureOS.Domain.Evidence;
 using VentureOS.Domain.Hypotheses;
 using VentureOS.Domain.Assumptions;
+using VentureOS.Domain.Opportunities;
 using VentureOS.Domain.Challenges;
 using VentureOS.Domain.Decisions;
 using VentureOS.Domain.Lessons;
@@ -18,6 +19,7 @@ public sealed class Case : AggregateRoot
     private readonly List<EvidenceEntity> _evidence = [];
     private readonly List<Hypothesis> _hypotheses = [];
     private readonly List<Assumption> _assumptions = [];
+    private readonly List<Opportunity> _opportunities = [];
     private readonly List<Challenge> _challenges = [];
     private readonly List<Decision> _decisions = [];
     private readonly List<Lesson> _lessons = [];
@@ -70,6 +72,8 @@ public sealed class Case : AggregateRoot
 
     public IReadOnlyCollection<Assumption> Assumptions => _assumptions.AsReadOnly();
 
+    public IReadOnlyCollection<Opportunity> Opportunities => _opportunities.AsReadOnly();
+
     public IReadOnlyCollection<Challenge> Challenges => _challenges.AsReadOnly();
 
     public IReadOnlyCollection<Decision> Decisions => _decisions.AsReadOnly();
@@ -107,6 +111,7 @@ public sealed class Case : AggregateRoot
         IReadOnlyCollection<Observation> observations,
         IReadOnlyCollection<Evidence.Evidence> evidence,
         IReadOnlyCollection<Assumption> assumptions,
+        IReadOnlyCollection<Opportunity> opportunities,
         IReadOnlyCollection<Hypothesis> hypotheses,
         IReadOnlyCollection<Challenge> challenges,
         IReadOnlyCollection<Decision> decisions,
@@ -123,6 +128,7 @@ public sealed class Case : AggregateRoot
         ventureCase._observations.AddRange(observations);
         ventureCase._evidence.AddRange(evidence);
         ventureCase._assumptions.AddRange(assumptions);
+        ventureCase._opportunities.AddRange(opportunities);
         ventureCase._hypotheses.AddRange(hypotheses);
         ventureCase._challenges.AddRange(challenges);
         ventureCase._decisions.AddRange(decisions);
@@ -380,6 +386,91 @@ public sealed class Case : AggregateRoot
     }
 
     // ============================
+    // OPPORTUNITIES
+    // ============================
+    public Result<Opportunity> CreateOpportunity(OpportunityDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        if (Status == CaseStatus.Archived)
+        {
+            return Result<Opportunity>.Failure("Cannot create opportunities for an archived case.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Statement))
+        {
+            return Result<Opportunity>.Failure("Opportunity statement is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.CustomerValue))
+        {
+            return Result<Opportunity>.Failure("Opportunity customer value is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.CommercialValue))
+        {
+            return Result<Opportunity>.Failure("Opportunity commercial value is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Differentiation))
+        {
+            return Result<Opportunity>.Failure("Opportunity differentiation is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(draft.Timing))
+        {
+            return Result<Opportunity>.Failure("Opportunity timing is required.");
+        }
+
+        if (draft.EvidenceIds.Count == 0)
+        {
+            return Result<Opportunity>.Failure("Opportunity must reference at least one piece of evidence.");
+        }
+
+        var knownEvidenceIds = _evidence.Select(evidence => evidence.Id).ToHashSet();
+
+        var unknownEvidenceIds = draft.EvidenceIds
+            .Where(evidenceId => !knownEvidenceIds.Contains(evidenceId))
+            .ToArray();
+
+        if (unknownEvidenceIds.Length > 0)
+        {
+            return Result<Opportunity>.Failure("Opportunity cannot reference evidence that does not belong to the case.");
+        }
+
+        var knownAssumptionIds = _assumptions.Select(assumption => assumption.Id).ToHashSet();
+
+        var unknownAssumptionIds = draft.AssumptionIds
+            .Where(assumptionId => !knownAssumptionIds.Contains(assumptionId))
+            .ToArray();
+
+        if (unknownAssumptionIds.Length > 0)
+        {
+            return Result<Opportunity>.Failure("Opportunity cannot reference assumptions that do not belong to the case.");
+        }
+
+        var opportunity = new Opportunity(
+            Guid.NewGuid(),
+            Id,
+            draft.Statement.Trim(),
+            draft.CustomerValue.Trim(),
+            draft.CommercialValue.Trim(),
+            draft.Differentiation.Trim(),
+            draft.Timing.Trim(),
+            draft.Confidence,
+            draft.EvidenceIds.Distinct().ToArray(),
+            draft.AssumptionIds.Distinct().ToArray(),
+            DateTime.UtcNow);
+
+        _opportunities.Add(opportunity);
+        UpdatedAtUtc = DateTime.UtcNow;
+
+        AddDomainEvent(new OpportunityCreatedEvent(Id, opportunity.Id, opportunity.Statement));
+
+        return Result<Opportunity>.Success(opportunity);
+    }
+
+    // ============================
     // CHALLENGES
     // ============================
     public Result<Challenge> RaiseChallenge(ChallengeDraft draft)
@@ -442,6 +533,7 @@ public sealed class Case : AggregateRoot
             ChallengeTarget.Assumption => _assumptions.Any(assumption => assumption.Id == targetId),
             ChallengeTarget.Hypothesis => _hypotheses.Any(hypothesis => hypothesis.Id == targetId),
             ChallengeTarget.Decision => false,
+            ChallengeTarget.Opportunity => _opportunities.Any(opportunity => opportunity.Id == targetId),
             _ => false
         };
     }

@@ -5,5 +5,6 @@ public enum ChallengeTarget
     Evidence = 0,
     Assumption = 1,
     Hypothesis = 2,
-    Decision = 3
+    Decision = 3,
+    Opportunity = 4
 }

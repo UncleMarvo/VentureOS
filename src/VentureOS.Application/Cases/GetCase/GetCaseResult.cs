@@ -12,6 +12,7 @@ public sealed record GetCaseResult(
     int ObservationCount,
     int EvidenceCount,
     int AssumptionCount,
+    int OpportunityCount,
     int HypothesisCount,
     int ChallengeCount,
     int DecisionCount,

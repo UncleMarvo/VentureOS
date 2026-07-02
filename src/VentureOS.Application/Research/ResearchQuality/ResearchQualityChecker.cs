@@ -17,6 +17,7 @@ public static class ResearchQualityChecker
         CheckObservations(package, issues);
         CheckEvidence(package, issues);
         CheckAssumptions(package, issues);
+        CheckOpportunities(package, issues);
         CheckHypotheses(package, issues);
         CheckChallenges(package, issues);
 
@@ -98,6 +99,46 @@ public static class ResearchQualityChecker
                 null,
                 $"assumptions[{i}].rationale",
                 issues);
+        }
+    }
+
+    private static void CheckOpportunities(
+        ResearchPackageDto package,
+        List<ResearchQualityIssueDto> issues)
+    {
+        for (var i = 0; i < package.Opportunities.Count; i++)
+        {
+            var opportunity = package.Opportunities[i];
+
+            CheckUnsupportedNumber(opportunity.Statement, null, $"opportunities[{i}].statement", issues);
+            CheckUnsupportedNumber(opportunity.CustomerValue, null, $"opportunities[{i}].customerValue", issues);
+            CheckUnsupportedNumber(opportunity.CommercialValue, null, $"opportunities[{i}].commercialValue", issues);
+            CheckUnsupportedNumber(opportunity.Differentiation, null, $"opportunities[{i}].differentiation", issues);
+            CheckUnsupportedNumber(opportunity.Timing, null, $"opportunities[{i}].timing", issues);
+
+            foreach (var evidenceIndex in opportunity.EvidenceIndexes)
+            {
+                if (evidenceIndex < 0 || evidenceIndex >= package.Evidence.Count)
+                {
+                    issues.Add(new ResearchQualityIssueDto(
+                        ResearchQualitySeverity.Error,
+                        ResearchQualityCode.InvalidEvidenceIndex,
+                        $"opportunities[{i}].evidenceIndexes",
+                        $"Evidence index {evidenceIndex} does not exist."));
+                }
+            }
+
+            foreach (var assumptionIndex in opportunity.AssumptionIndexes)
+            {
+                if (assumptionIndex < 0 || assumptionIndex >= package.Assumptions.Count)
+                {
+                    issues.Add(new ResearchQualityIssueDto(
+                        ResearchQualitySeverity.Error,
+                        ResearchQualityCode.InvalidAssumptionIndex,
+                        $"opportunities[{i}].assumptionIndexes",
+                        $"Assumption index {assumptionIndex} does not exist."));
+                }
+            }
         }
     }
 
@@ -188,6 +229,7 @@ public static class ResearchQualityChecker
                 "Evidence" => package.Evidence.Count,
                 "Assumption" => package.Assumptions.Count,
                 "Hypothesis" => package.Hypotheses.Count,
+                "Opportunity" => package.Opportunities.Count,
                 _ => -1
             };
 

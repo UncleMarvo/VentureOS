@@ -58,6 +58,22 @@ public sealed class DuckDbSchemaInitializer
                 updated_at_utc TIMESTAMP NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS opportunities (
+                id UUID PRIMARY KEY,
+                case_id UUID NOT NULL,
+                statement VARCHAR NOT NULL,
+                customer_value VARCHAR NOT NULL,
+                commercial_value VARCHAR NOT NULL,
+                differentiation VARCHAR NOT NULL,
+                timing VARCHAR NOT NULL,
+                confidence VARCHAR NOT NULL,
+                evidence_ids VARCHAR NOT NULL,
+                assumption_ids VARCHAR NOT NULL,
+                status VARCHAR NOT NULL,
+                created_at_utc TIMESTAMP NOT NULL,
+                updated_at_utc TIMESTAMP NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS hypotheses (
                 id UUID PRIMARY KEY,
                 case_id UUID NOT NULL,

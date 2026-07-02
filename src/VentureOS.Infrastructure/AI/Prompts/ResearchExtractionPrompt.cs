@@ -39,8 +39,10 @@ public static class ResearchExtractionPrompt
         - Evidence must interpret linked observations.
         - Evidence must not introduce new facts.
         - Assumptions must describe something that must be true for the venture to work.
+        - Opportunities must identify a commercially meaningful possibility grounded directly in evidence.
+        - Opportunities may optionally link assumptions where the opportunity still depends on unvalidated beliefs.
         - Hypotheses must be testable.
-        - Challenges must target a specific evidence item, assumption, or hypothesis.
+        - Challenges must target a specific evidence item, assumption, hypothesis, or opportunity.
         - Unsupported or uncertain claims should normally have confidence of 50 or lower.
         - Do not include unsupported numerical claims unless they already appear in the research analysis.
 
@@ -69,6 +71,18 @@ public static class ResearchExtractionPrompt
               "confidence": 0
             }
           ],
+          "opportunities": [
+            {
+              "statement": "string",
+              "customerValue": "string",
+              "commercialValue": "string",
+              "differentiation": "string",
+              "timing": "string",
+              "confidence": 0,
+              "evidenceIndexes": [0],
+              "assumptionIndexes": [0]
+            }
+          ],
           "hypotheses": [
             {
               "statement": "string",
@@ -93,14 +107,17 @@ public static class ResearchExtractionPrompt
 
         Additional rules:
         - direction must be 0 for supporting evidence, 1 for contradicting evidence, or 2 for neutral/mixed evidence.
-        - targetType must be one of: "Evidence", "Assumption", "Hypothesis".
+        - targetType must be one of: "Evidence", "Assumption", "Hypothesis", "Opportunity".
         - targetIndex must refer to the zero-based index within the selected target collection.
         - observationIndexes must refer to indexes in the observations array.
         - evidenceIndexes must refer to indexes in the evidence array.
         - assumptionIndexes must refer to indexes in the assumptions array.
+        - opportunities.evidenceIndexes must refer to indexes in the evidence array and must contain at least one index.
+        - opportunities.assumptionIndexes must refer to indexes in the assumptions array and may be empty.
         - Return between 3 and 7 observations.
         - Return between 2 and 5 evidence items.
         - Return between 2 and 5 assumptions.
+        - Return between 1 and 2 opportunities.
         - Return between 1 and 3 hypotheses.
         - Return between 1 and 3 challenges.
 

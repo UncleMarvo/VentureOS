@@ -2,6 +2,7 @@ using VentureOS.Application.Cases.AddObservation;
 using VentureOS.Application.Cases.CreateAssumption;
 using VentureOS.Application.Cases.CreateEvidence;
 using VentureOS.Application.Cases.CreateHypothesis;
+using VentureOS.Application.Cases.CreateOpportunity;
 using VentureOS.Application.Cases.RaiseChallenge;
 using VentureOS.Domain.Challenges;
 using VentureOS.Domain.Common;
@@ -13,6 +14,7 @@ public sealed class AcceptResearchPackageHandler
     private readonly AddObservationHandler _addObservationHandler;
     private readonly CreateEvidenceHandler _createEvidenceHandler;
     private readonly CreateAssumptionHandler _createAssumptionHandler;
+    private readonly CreateOpportunityHandler _createOpportunityHandler;
     private readonly CreateHypothesisHandler _createHypothesisHandler;
     private readonly RaiseChallengeHandler _raiseChallengeHandler;
 
@@ -20,12 +22,14 @@ public sealed class AcceptResearchPackageHandler
         AddObservationHandler addObservationHandler,
         CreateEvidenceHandler createEvidenceHandler,
         CreateAssumptionHandler createAssumptionHandler,
+        CreateOpportunityHandler createOpportunityHandler,
         CreateHypothesisHandler createHypothesisHandler,
         RaiseChallengeHandler raiseChallengeHandler)
     {
         _addObservationHandler = addObservationHandler;
         _createEvidenceHandler = createEvidenceHandler;
         _createAssumptionHandler = createAssumptionHandler;
+        _createOpportunityHandler = createOpportunityHandler;
         _createHypothesisHandler = createHypothesisHandler;
         _raiseChallengeHandler = raiseChallengeHandler;
     }
@@ -117,6 +121,44 @@ public sealed class AcceptResearchPackageHandler
         }
 
         // =====================
+        // OPPORTUNITY
+        // =====================
+        var opportunityIdsByIndex = new Dictionary<int, Guid>();
+        for (var index = 0; index < command.ResearchPackage.Opportunities.Count; index++)
+        {
+            var proposedOpportunity = command.ResearchPackage.Opportunities[index];
+
+            var opportunityEvidenceIds = proposedOpportunity.EvidenceIndexes
+                .Select(evidenceIndex => evidenceIdsByIndex[evidenceIndex])
+                .ToList();
+
+            var opportunityAssumptionIds = proposedOpportunity.AssumptionIndexes
+                .Select(assumptionIndex => assumptionIdsByIndex[assumptionIndex])
+                .ToList();
+
+            var result = await _createOpportunityHandler.HandleAsync(
+                new CreateOpportunityCommand(
+                    command.CaseId,
+                    proposedOpportunity.Statement,
+                    proposedOpportunity.CustomerValue,
+                    proposedOpportunity.CommercialValue,
+                    proposedOpportunity.Differentiation,
+                    proposedOpportunity.Timing,
+                    Confidence.FromPercentage(proposedOpportunity.Confidence),
+                    opportunityEvidenceIds,
+                    opportunityAssumptionIds),
+                cancellationToken);
+
+            if (result.IsFailure)
+            {
+                return Result<AcceptedResearchPackageDto>.Failure(
+                    result.Error ?? "Failed to create opportunity.");
+            }
+
+            opportunityIdsByIndex[index] = result.Value.OpportunityId;
+        }
+
+        // =====================
         // HYPOTHESIS
         // =====================
         var hypothesisIdsByIndex = new Dictionary<int, Guid>();
@@ -166,6 +208,7 @@ public sealed class AcceptResearchPackageHandler
                 "Evidence" => ChallengeTarget.Evidence,
                 "Assumption" => ChallengeTarget.Assumption,
                 "Hypothesis" => ChallengeTarget.Hypothesis,
+                "Opportunity" => ChallengeTarget.Opportunity,
                 _ => throw new InvalidOperationException(
                     $"Unsupported challenge target type: {proposedChallenge.TargetType}")
             };
@@ -175,6 +218,7 @@ public sealed class AcceptResearchPackageHandler
                 ChallengeTarget.Evidence => evidenceIdsByIndex[proposedChallenge.TargetIndex],
                 ChallengeTarget.Assumption => assumptionIdsByIndex[proposedChallenge.TargetIndex],
                 ChallengeTarget.Hypothesis => hypothesisIdsByIndex[proposedChallenge.TargetIndex],
+                ChallengeTarget.Opportunity => opportunityIdsByIndex[proposedChallenge.TargetIndex],
                 _ => throw new InvalidOperationException(
                     $"Unsupported challenge target: {target}")
             };
@@ -203,6 +247,7 @@ public sealed class AcceptResearchPackageHandler
             observationIdsByIndex.Count,
             evidenceIdsByIndex.Count,
             assumptionIdsByIndex.Count,
+            opportunityIdsByIndex.Count,
             hypothesisIdsByIndex.Count,
             challengeIdsByIndex.Count);
 

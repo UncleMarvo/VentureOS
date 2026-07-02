@@ -26,6 +26,7 @@ public sealed record CaseBriefCountsDto(
     int Observations,
     int Evidence,
     int Assumptions,
+    int Opportunities,
     int Hypotheses,
     int Challenges,
     int Decisions,

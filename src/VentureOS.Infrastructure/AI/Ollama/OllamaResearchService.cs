@@ -3,7 +3,9 @@ using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 using VentureOS.Application.Research;
+using VentureOS.Application.Research.EvidenceAcquisition;
 using VentureOS.Application.Research.ResearchCase;
+using VentureOS.Application.Research.ResearchPlanning;
 using VentureOS.Application.Research.ResearchQuality;
 using VentureOS.Domain.Cases;
 using VentureOS.Infrastructure.AI.Personas;
@@ -15,13 +17,16 @@ public sealed class OllamaResearchService : IResearchService
 {
     private readonly HttpClient _httpClient;
     private readonly OllamaOptions _options;
+    private readonly IEvidenceAcquisitionService _evidenceAcquisitionService;
 
     public OllamaResearchService(
         HttpClient httpClient,
-        IOptions<OllamaOptions> options)
+        IOptions<OllamaOptions> options,
+        IEvidenceAcquisitionService evidenceAcquisitionService)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        _evidenceAcquisitionService = evidenceAcquisitionService;
 
         _httpClient.BaseAddress = new Uri(_options.BaseUrl);
     }
@@ -34,11 +39,69 @@ public sealed class OllamaResearchService : IResearchService
 
         Console.WriteLine($"Using Ollama model: {_options.Model}");
 
-        var analysisPrompt = ResearchAnalysisPrompt.Build(ventureCase);
+        var evidencePlanPrompt = ResearchEvidencePlanningPrompt.Build(ventureCase);
+        var evidencePlanJson = await GenerateAsync(
+            evidencePlanPrompt,
+            cancellationToken);
+
+        var evidencePlan = JsonSerializer.Deserialize<ResearchEvidencePlanDto>(
+            evidencePlanJson,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+        Console.WriteLine("========================================");
+        Console.WriteLine("EVIDENCE PLAN");
+        Console.WriteLine("========================================");
+        Console.WriteLine(
+            JsonSerializer.Serialize(
+                evidencePlan,
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                }));
+
+        if (evidencePlan is null)
+        {
+            throw new InvalidOperationException("Failed to deserialize Ollama evidence plan response.");
+        }
+
+        var acquiredEvidence = await _evidenceAcquisitionService.AcquireEvidenceAsync(
+            ventureCase.Id,
+            evidencePlan.Questions,
+            cancellationToken);
+
+        Console.WriteLine("========================================");
+        Console.WriteLine("ACQUIRED EVIDENCE");
+        Console.WriteLine("========================================");
+
+        Console.WriteLine(
+            JsonSerializer.Serialize(
+                acquiredEvidence,
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                }));
+
+        var analysisPrompt = ResearchAnalysisPrompt.Build(
+            ventureCase,
+            evidencePlan,
+            acquiredEvidence);
+
+        Console.WriteLine("========================================");
+        Console.WriteLine("ANALYSIS PROMPT");
+        Console.WriteLine("========================================");
+        Console.WriteLine(analysisPrompt);
 
         var analysisText = await GenerateAsync(
             analysisPrompt,
             cancellationToken);
+
+        Console.WriteLine("========================================");
+        Console.WriteLine("ANALYSIS");
+        Console.WriteLine("========================================");
+        Console.WriteLine(analysisText);
 
         var extractionPrompt = ResearchExtractionPrompt.Build(analysisText);
 
@@ -52,6 +115,11 @@ public sealed class OllamaResearchService : IResearchService
             {
                 PropertyNameCaseInsensitive = true
             });
+
+        Console.WriteLine("========================================");
+        Console.WriteLine("EXTRACTION");
+        Console.WriteLine("========================================");
+        Console.WriteLine(researchPackage);
 
         stopwatch.Stop();
 
@@ -86,6 +154,7 @@ public sealed class OllamaResearchService : IResearchService
             researchPackage.Observations,
             researchPackage.Evidence,
             researchPackage.Assumptions,
+            researchPackage.Opportunities,
             researchPackage.Hypotheses,
             researchPackage.Challenges);
     }
