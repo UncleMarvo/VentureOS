@@ -190,16 +190,10 @@ The long-term goal is coordinated AI executives operating under human oversight.
 # Current Phase
 
 Completed
-Research generation now uses a two-stage AI pipeline:
-Analysis
-Structured extraction
-Research Quality introduced as a first-class Application concern.
-Deep-dive responses now include quality issues for human review.
-Initial quality checks implemented:
-Required fields
-Invalid indexes
-Invalid challenge targets
-Unsupported numerical claims
+Research pipeline extracted into four independently swappable capabilities (Planning, Evidence Acquisition, Analysis, Extraction).
+Opportunity introduced as a first-class Domain object, peer to Hypothesis.
+Red Team Review capability introduced: `IRedTeamReviewService` reviews a case's already-accepted Evidence, Assumptions, Hypotheses and Opportunities and proposes Challenges against real Domain ids (not proposal indexes, since the target state already exists).
+Red Team proposals go through the same quality-check-then-human-acceptance workflow as Research (`RedTeamQualityChecker` validates required fields, target type, and target existence against the real case).
 AI proposals remain auditable and are no longer silently trusted.
 
 ---
@@ -211,6 +205,7 @@ AI proposals remain auditable and are no longer silently trusted.
 - Record evidence
 - Record assumptions
 - Record hypotheses
+- Record opportunities
 - Raise challenges
 - Record decisions
 - Record lessons
@@ -227,6 +222,8 @@ AI proposals remain auditable and are no longer silently trusted.
 - Human review workflow
 - AI research acceptance
 - AI research persisted into the Domain
+- AI red team review (challenges proposed against real case ids)
+- AI red team review acceptance
 
 ---
 
@@ -277,6 +274,18 @@ Accept Research
 
 ↓
 
+Red Team Review
+
+↓
+
+Human Review
+
+↓
+
+Accept Red Team Review
+
+↓
+
 Application Handlers
 
 ↓
@@ -296,19 +305,18 @@ Timeline / Brief
 
 # Current Sprint Goal
 
-Improve the quality and commercial usefulness of the Research Analyst rather than expanding infrastructure or adding additional AI agents.
-
-Focus on producing board-quality venture research suitable for founder decision-making.
+Build the Board Review capability, the last of the three MFP organisational roles (Research, Red Team, Board).
 
 ---
 
 # Next Tasks
 
-1. Improve Research Analyst prompt quality.
-2. Reduce hallucinated facts and unsupported statistics.
-3. Introduce richer citation/provenance model.
-4. Produce a board-quality research report from accepted research.
-5. Evaluate the smallest commercially valuable deliverable for first customers.
+1. Build the Board Review capability (`IBoardReviewService`, briefing DTO covering evidence/objections/confidence, no Domain changes expected).
+2. Empirically tune Red Team's Guid-targeting reliability against the running local model; fall back to short reference tags if the rejection rate proves too high.
+3. Improve Research Analyst prompt quality.
+4. Reduce hallucinated facts and unsupported statistics.
+5. Introduce richer citation/provenance model.
+6. Evaluate the smallest commercially valuable deliverable for first customers.
 
 ---
 
@@ -334,6 +342,8 @@ Focus on producing board-quality venture research suitable for founder decision-
 - Research quality depends heavily on prompt engineering.
 - AI citations are currently placeholders and not independently verified.
 - Research output quality is more important than response speed.
+- Red Team asks the model to copy real Guids verbatim as challenge targets, a harder generation task than Research's small-integer indexes — expect a higher rejection rate at the quality-check stage until tuned.
+- `Challenge` does not yet carry severity, proposed mitigation, or withdrawal-condition fields, though the Constitution's Red Team Doctrine calls for them — folded into the free-text Reasoning field for now.
 
 ---
 
@@ -346,6 +356,8 @@ Focus on producing board-quality venture research suitable for founder decision-
 - Personas are first-class concepts.
 - Prompt engineering is considered a core competitive advantage.
 - AI Contract / DTO separation postponed until naturally required.
+- Red Team's proposed challenges target real Domain Guids directly, not proposal-array indexes, because Red Team runs after Research has already been accepted into the Domain (unlike Research, which references only its own not-yet-created proposals).
+- Red Team's quality checker validates target existence against the real Case, a deliberate divergence from Research's checker (which can't, since nothing real exists at Research-review time).
 
 ---
 

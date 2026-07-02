@@ -119,10 +119,10 @@ Venture research is generated through a four-stage AI pipeline — Research Plan
 
 Test coverage exists across two projects, covering Domain behaviour and Application-layer research quality checks.
 
-Red Team Review and Board Review are not yet built. Until they exist, the reasoning chain stops at Decision without a governance capability actively challenging or reviewing it.
+Red Team Review is now built: an AI capability (`IRedTeamReviewService`) reviews a case's already-accepted Evidence, Assumptions, Hypotheses and Opportunities, and proposes Challenges against the weak, unsupported, or contradicted ones, subject to the same quality-check-then-human-acceptance workflow Research already established. Board Review is not yet built. Until it exists, the reasoning chain stops at Decision without a Board governance capability actively reviewing it.
 
 ---
 
 ## Next Milestone
 
-Build the Red Team Review capability.
+Build the Board Review capability.
