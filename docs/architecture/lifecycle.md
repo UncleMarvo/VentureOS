@@ -24,6 +24,8 @@ The objective is not certainty.
 
 The objective is progressively reducing uncertainty through disciplined reasoning, experimentation and learning.
 
+AI generates proposals. Application evaluates proposal quality. Domain decides what is accepted.
+
 ---
 
 # Information Flow Principle

@@ -2,11 +2,17 @@ using VentureOS.Api.Endpoints;
 using VentureOS.Infrastructure;
 using VentureOS.Infrastructure.AI.Ollama;
 using VentureOS.Infrastructure.Persistence.DuckDb;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<OllamaOptions>(
     builder.Configuration.GetSection("Ollama"));
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 builder.Services.AddVentureOs();
 

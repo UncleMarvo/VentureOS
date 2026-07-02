@@ -1,48 +1,31 @@
-using VentureOS.Domain.Cases;
 using VentureOS.Infrastructure.AI.Personas;
 
 namespace VentureOS.Infrastructure.AI.Prompts;
 
-public static class ResearchCasePrompt
+public static class ResearchExtractionPrompt
 {
-    public const string PromptVersion = "1.0.0";
-
-    public static string Build(Case ventureCase)
+    public static string Build(string researchAnalysis)
     {
         return $$"""
         {{ResearchAnalystPersona.Text}}
 
         Task:
-        Produce a board-quality early research package for the following venture case.
+        Convert the following research analysis into valid VentureOS research JSON.
 
-        The output must help a human founder, operator, or investor decide whether this case deserves deeper investigation.
-
-        Board-quality means:
-        - Commercially relevant.
-        - Specific to the case.
-        - Explicit about uncertainty.
-        - Useful for decision-making.
-        - Clear about what needs to be validated next.
-        - Sceptical of weak evidence.
-        - Free from hype, filler, and unsupported claims.
-
-        Case:
-        Title: {{ventureCase.Title}}
-        Mission: {{ventureCase.Mission}}
+        Research analysis:
+        {{researchAnalysis}}
 
         Instructions:
-        - Identify early research material that could help a human decide whether this case deserves deeper investigation.
+        - Extract structured research proposals only.
+        - Use only the information contained in the research analysis.
+        - Do not add new claims.
+        - Do not add new statistics.
+        - Do not add new market facts.
+        - Do not add named sources unless they appear in the research analysis.
         - Do not make a final recommendation.
         - Do not decide whether the venture should proceed.
-        - Do not act as the founder, CEO, investor, marketer, product manager, or board.
-        - Produce structured research proposals only.
-        - Do not include named studies, reports, organisations, dates, statistics, or source titles unless they were provided in the case context.
-        - If no real source is available, use "AI-generated research hypothesis" as sourceReference.
-        - Prefer useful uncertainty over false precision.
-        - Prefer fewer, sharper items over more generic items.
-        - Avoid generic startup advice.
-        - Avoid conclusions that could apply to almost any venture.
-        - Keep outputs concise but specific.
+        - Preserve uncertainty.
+        - Prefer cautious wording over false precision.
         - Return JSON only.
         - Do not include markdown.
         - Do not include explanations.
@@ -51,17 +34,15 @@ public static class ResearchCasePrompt
         - Use zero-based indexes.
         - Confidence must be an integer from 0 to 100.
 
-        Object quality rules:
-        - Each observation must describe a concrete market, customer, operational, regulatory, competitive, technical, financial, behavioural, or economic consideration.
-        - Each observation must be relevant to the specific venture case.
-        - Each evidence item must explain why the linked observation matters for the venture case.
-        - Each evidence item must clearly support, contradict, or qualify the venture case.
-        - Each assumption must identify something that must be true for the venture case to work.
-        - Each assumption rationale must explain why the assumption is material.
-        - Each hypothesis must be testable through research, customer discovery, prototype testing, sales outreach, pricing validation, or market validation.
-        - Each hypothesis must include a clear expected outcome and success criteria.
-        - Each challenge must identify a material weakness, risk, contradiction, uncertainty, or validation gap.
-        - Each challenge must target a specific evidence item, assumption, or hypothesis.
+        Object rules:
+        - Observations must describe relevant venture, customer, market, technical, operational, competitive, regulatory, behavioural, or economic considerations.
+        - Evidence must interpret linked observations.
+        - Evidence must not introduce new facts.
+        - Assumptions must describe something that must be true for the venture to work.
+        - Hypotheses must be testable.
+        - Challenges must target a specific evidence item, assumption, or hypothesis.
+        - Unsupported or uncertain claims should normally have confidence of 50 or lower.
+        - Do not include unsupported numerical claims unless they already appear in the research analysis.
 
         Output schema:
         {
@@ -122,6 +103,13 @@ public static class ResearchCasePrompt
         - Return between 2 and 5 assumptions.
         - Return between 1 and 3 hypotheses.
         - Return between 1 and 3 challenges.
+
+        Before returning JSON, silently verify:
+        - all indexes are valid
+        - all required fields are present
+        - no extra fields are present
+        - evidence does not introduce new facts
+        - the JSON exactly matches the schema
         """;
     }
 }

@@ -4,9 +4,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using VentureOS.Application.Research;
 using VentureOS.Application.Research.ResearchCase;
+using VentureOS.Application.Research.ResearchQuality;
 using VentureOS.Domain.Cases;
-using VentureOS.Infrastructure.AI.Prompts;
 using VentureOS.Infrastructure.AI.Personas;
+using VentureOS.Infrastructure.AI.Prompts;
 
 namespace VentureOS.Infrastructure.AI.Ollama;
 
@@ -33,29 +34,20 @@ public sealed class OllamaResearchService : IResearchService
 
         Console.WriteLine($"Using Ollama model: {_options.Model}");
 
-        var response = await _httpClient.PostAsJsonAsync(
-            "/api/generate",
-            new
-            {
-                model = _options.Model,
-                prompt = ResearchCasePrompt.Build(ventureCase),
-                stream = false
-            },
+        var analysisPrompt = ResearchAnalysisPrompt.Build(ventureCase);
+
+        var analysisText = await GenerateAsync(
+            analysisPrompt,
             cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        var extractionPrompt = ResearchExtractionPrompt.Build(analysisText);
 
-            throw new InvalidOperationException(
-                $"Ollama request failed. Status: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {errorBody}");
-        }
-
-        var ollamaResponse = await response.Content.ReadFromJsonAsync<OllamaGenerateResponse>(
+        var json = await GenerateAsync(
+            extractionPrompt,
             cancellationToken);
 
         var researchPackage = JsonSerializer.Deserialize<ResearchPackageDto>(
-            ollamaResponse?.Response ?? string.Empty,
+            json,
             new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -66,6 +58,15 @@ public sealed class OllamaResearchService : IResearchService
         if (researchPackage is null)
         {
             throw new InvalidOperationException("Failed to deserialize Ollama research response.");
+        }
+
+        // QUALITY CHECK
+        var qualityIssues = ResearchQualityChecker.Check(researchPackage);
+
+        foreach (var issue in qualityIssues)
+        {
+            Console.WriteLine(
+                $"Research quality issue [{issue.Severity}] {issue.Code} at {issue.Path}: {issue.Message}");
         }
 
         var researchGeneration = new ResearchGenerationDto(
@@ -88,7 +89,39 @@ public sealed class OllamaResearchService : IResearchService
             researchPackage.Hypotheses,
             researchPackage.Challenges);
     }
+
+    private async Task<string> GenerateAsync(
+        string prompt,
+        CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "/api/generate",
+            new
+            {
+                model = _options.Model,
+                prompt,
+                stream = false
+            },
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            throw new InvalidOperationException(
+                $"Ollama request failed. Status: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {errorBody}");
+        }
+
+        var ollamaResponse = await response.Content.ReadFromJsonAsync<OllamaGenerateResponse>(
+            cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(ollamaResponse?.Response))
+        {
+            throw new InvalidOperationException("Ollama returned an empty response.");
+        }
+
+        return ollamaResponse.Response;
+    }
+
     private sealed record OllamaGenerateResponse(string Response);
 }
-
-
