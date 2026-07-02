@@ -13,6 +13,9 @@ using VentureOS.Application.Cases.RaiseChallenge;
 using VentureOS.Application.Cases.RecordDecision;
 using VentureOS.Application.Cases.RecordLesson;
 using VentureOS.Application.Decisions.GetDecisionContext;
+using VentureOS.Application.RedTeam;
+using VentureOS.Application.RedTeam.AcceptRedTeamReview;
+using VentureOS.Application.RedTeam.RedTeamCase;
 using VentureOS.Application.Research;
 using VentureOS.Application.Research.EvidenceAcquisition;
 using VentureOS.Application.Research.ResearchAnalysis;
@@ -83,6 +86,14 @@ public static class DependencyInjection
                 client.Timeout = TimeSpan.FromMinutes(10);
             });
         services.AddScoped<AcceptResearchPackageHandler>();
+
+        services.AddScoped<RedTeamCaseHandler>();
+        services.AddScoped<AcceptRedTeamReviewHandler>();
+        services
+            .AddHttpClient<IRedTeamReviewService, OllamaRedTeamReviewService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(10);
+            });
 
         return services;
     }
