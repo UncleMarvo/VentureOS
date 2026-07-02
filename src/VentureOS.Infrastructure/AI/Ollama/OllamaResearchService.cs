@@ -1,11 +1,10 @@
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
-using System.Net.Http.Json;
-using System.Text.Json;
 using VentureOS.Application.Research;
 using VentureOS.Application.Research.EvidenceAcquisition;
 using VentureOS.Application.Research.ResearchAnalysis;
 using VentureOS.Application.Research.ResearchCase;
+using VentureOS.Application.Research.ResearchExtraction;
 using VentureOS.Application.Research.ResearchPlanning;
 using VentureOS.Application.Research.ResearchQuality;
 using VentureOS.Domain.Cases;
@@ -16,26 +15,24 @@ namespace VentureOS.Infrastructure.AI.Ollama;
 
 public sealed class OllamaResearchService : IResearchService
 {
-    private readonly HttpClient _httpClient;
     private readonly OllamaOptions _options;
     private readonly IResearchPlanningService _researchPlanningService;
     private readonly IEvidenceAcquisitionService _evidenceAcquisitionService;
     private readonly IResearchAnalysisService _researchAnalysisService;
+    private readonly IResearchExtractionService _researchExtractionService;
 
     public OllamaResearchService(
-        HttpClient httpClient,
         IOptions<OllamaOptions> options,
         IResearchPlanningService researchPlanningService,
         IEvidenceAcquisitionService evidenceAcquisitionService,
-        IResearchAnalysisService researchAnalysisService)
+        IResearchAnalysisService researchAnalysisService,
+        IResearchExtractionService researchExtractionService)
     {
-        _httpClient = httpClient;
         _options = options.Value;
         _researchPlanningService = researchPlanningService;
         _evidenceAcquisitionService = evidenceAcquisitionService;
         _researchAnalysisService = researchAnalysisService;
-
-        _httpClient.BaseAddress = new Uri(_options.BaseUrl);
+        _researchExtractionService = researchExtractionService;
     }
 
     public async Task<ResearchPackageDto> ResearchCaseAsync(
@@ -59,39 +56,11 @@ public sealed class OllamaResearchService : IResearchService
             acquiredEvidence,
             cancellationToken);
 
-        var extractionPrompt = ResearchExtractionPrompt.Build(analysisResult.AnalysisText);
-
-        var json = await GenerateAsync(
-            extractionPrompt,
+        var extracted = await _researchExtractionService.ExtractAsync(
+            analysisResult.AnalysisText,
             cancellationToken);
 
-        var researchPackage = JsonSerializer.Deserialize<ResearchPackageDto>(
-            json,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-        Console.WriteLine("========================================");
-        Console.WriteLine("EXTRACTION");
-        Console.WriteLine("========================================");
-        Console.WriteLine(researchPackage);
-
         stopwatch.Stop();
-
-        if (researchPackage is null)
-        {
-            throw new InvalidOperationException("Failed to deserialize Ollama research response.");
-        }
-
-        // QUALITY CHECK
-        var qualityIssues = ResearchQualityChecker.Check(researchPackage);
-
-        foreach (var issue in qualityIssues)
-        {
-            Console.WriteLine(
-                $"Research quality issue [{issue.Severity}] {issue.Code} at {issue.Path}: {issue.Message}");
-        }
 
         var promptVersion =
             $"{ResearchEvidencePlanningPrompt.Version}+{EvidenceAcquisitionPrompt.Version}" +
@@ -107,50 +76,25 @@ public sealed class OllamaResearchService : IResearchService
             stopwatch.Elapsed,
             "AI-generated research requiring human review.");
 
-        return new ResearchPackageDto(
+        var researchPackage = new ResearchPackageDto(
             ventureCase.Id,
             ventureCase.Mission,
             researchGeneration,
-            researchPackage.Observations,
-            researchPackage.Evidence,
-            researchPackage.Assumptions,
-            researchPackage.Opportunities,
-            researchPackage.Hypotheses,
-            researchPackage.Challenges);
-    }
+            extracted.Observations,
+            extracted.Evidence,
+            extracted.Assumptions,
+            extracted.Opportunities,
+            extracted.Hypotheses,
+            extracted.Challenges);
 
-    private async Task<string> GenerateAsync(
-        string prompt,
-        CancellationToken cancellationToken)
-    {
-        var response = await _httpClient.PostAsJsonAsync(
-            "/api/generate",
-            new
-            {
-                model = _options.Model,
-                prompt,
-                stream = false
-            },
-            cancellationToken);
+        var qualityIssues = ResearchQualityChecker.Check(researchPackage);
 
-        if (!response.IsSuccessStatusCode)
+        foreach (var issue in qualityIssues)
         {
-            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            throw new InvalidOperationException(
-                $"Ollama request failed. Status: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {errorBody}");
+            Console.WriteLine(
+                $"Research quality issue [{issue.Severity}] {issue.Code} at {issue.Path}: {issue.Message}");
         }
 
-        var ollamaResponse = await response.Content.ReadFromJsonAsync<OllamaGenerateResponse>(
-            cancellationToken);
-
-        if (string.IsNullOrWhiteSpace(ollamaResponse?.Response))
-        {
-            throw new InvalidOperationException("Ollama returned an empty response.");
-        }
-
-        return ollamaResponse.Response;
+        return researchPackage;
     }
-
-    private sealed record OllamaGenerateResponse(string Response);
 }

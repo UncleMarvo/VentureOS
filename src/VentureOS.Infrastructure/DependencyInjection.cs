@@ -17,6 +17,7 @@ using VentureOS.Application.Research;
 using VentureOS.Application.Research.EvidenceAcquisition;
 using VentureOS.Application.Research.ResearchAnalysis;
 using VentureOS.Application.Research.ResearchCase;
+using VentureOS.Application.Research.ResearchExtraction;
 using VentureOS.Application.Research.ResearchPlanning;
 using VentureOS.Infrastructure.AI.Ollama;
 using VentureOS.Infrastructure.Persistence.DuckDb;
@@ -60,11 +61,7 @@ public static class DependencyInjection
         services.AddScoped<GetCaseBriefHandler>();
         services.AddScoped<ResearchCaseHandler>();
 
-        services
-            .AddHttpClient<IResearchService, OllamaResearchService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(10);
-            });
+        services.AddScoped<IResearchService, OllamaResearchService>();
         services
             .AddHttpClient<IEvidenceAcquisitionService, OllamaEvidenceAcquisitionService>(client =>
             {
@@ -77,6 +74,11 @@ public static class DependencyInjection
             });
         services
             .AddHttpClient<IResearchAnalysisService, OllamaResearchAnalysisService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(10);
+            });
+        services
+            .AddHttpClient<IResearchExtractionService, OllamaResearchExtractionService>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(10);
             });
