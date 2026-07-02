@@ -39,6 +39,10 @@ Each completed task should result in:
 
 * [x] ObservationSource
 
+* [x] Opportunity
+
+* [x] OpportunityDraft
+
 ---
 
 ## Ready
