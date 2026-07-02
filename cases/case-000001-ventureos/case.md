@@ -119,10 +119,14 @@ Venture research is generated through a four-stage AI pipeline — Research Plan
 
 Test coverage exists across two projects, covering Domain behaviour and Application-layer research quality checks.
 
-Red Team Review is now built: an AI capability (`IRedTeamReviewService`) reviews a case's already-accepted Evidence, Assumptions, Hypotheses and Opportunities, and proposes Challenges against the weak, unsupported, or contradicted ones, subject to the same quality-check-then-human-acceptance workflow Research already established. Board Review is not yet built. Until it exists, the reasoning chain stops at Decision without a Board governance capability actively reviewing it.
+Red Team Review is now built: an AI capability (`IRedTeamReviewService`) reviews a case's already-accepted Evidence, Assumptions, Hypotheses and Opportunities, and proposes Challenges against the weak, unsupported, or contradicted ones, subject to the same quality-check-then-human-acceptance workflow Research already established.
+
+Board Review is now built: an AI capability (`IBoardReviewService`) prepares a Board briefing over a case's current Observations, Evidence (split into supporting/contradicting/neutral), Assumptions, Hypotheses, Opportunities, Challenges, and any Research/Red Team quality findings the caller still has on hand. Unlike Research and Red Team, Board Review never proposes new Domain objects and has no accept step — the deterministic facts are assembled directly from the Domain with zero AI involvement, and the AI is given no identifiers at all, only rendered text, to produce a narrative (executive summary, decision framing, risks, confidence, recommended investigations, and rationale for each of the four possible decision outcomes). The human Board reads the briefing, then records the actual decision through the pre-existing `POST /cases/{id}/decisions` endpoint — Board Review does not touch the Domain.
+
+Per `docs/roadmap/minimun-foundation-platform_v1.1.md`'s own Success Definition ("a single user can investigate a venture from initial idea through to a fully auditable Board decision") and Definition of Done, the Minimum Foundation Platform is now functionally complete: Case, Research, Evidence, Hypotheses, Challenge, Board Review, and Decision recording all exist and are wired end to end. `Action` and `Outcome` remain unimplemented as Domain concepts — they appear only in the roadmap's pipeline diagram, not in its Core Capabilities or Definition of Done, so this is a deliberate, out-of-v1.1-scope gap, not an oversight.
 
 ---
 
 ## Next Milestone
 
-Build the Board Review capability.
+Exercise the full MFP loop end to end against a real case (Case → Research → Red Team → Board → Decision) to validate the demonstration the roadmap's Definition of Done describes, and decide what's next: closing the Action/Outcome loop, addressing the known Domain gaps (Assumption/Hypothesis/Opportunity status transitions, `Decision`↔`Opportunity` cross-referencing, `ChallengeTarget.Decision`), or moving toward the first commercially valuable slice per the Project Charter.

@@ -194,6 +194,8 @@ Research pipeline extracted into four independently swappable capabilities (Plan
 Opportunity introduced as a first-class Domain object, peer to Hypothesis.
 Red Team Review capability introduced: `IRedTeamReviewService` reviews a case's already-accepted Evidence, Assumptions, Hypotheses and Opportunities and proposes Challenges against real Domain ids (not proposal indexes, since the target state already exists).
 Red Team proposals go through the same quality-check-then-human-acceptance workflow as Research (`RedTeamQualityChecker` validates required fields, target type, and target existence against the real case).
+Board Review capability introduced: `IBoardReviewService` prepares a briefing from a case's current Observations, Evidence, Assumptions, Hypotheses, Opportunities, Challenges, and any Research/Red Team quality findings the caller supplies. All enumerable facts are assembled deterministically by `BoardDossierAssembler` with zero AI involvement; the AI receives no identifiers at all, only rendered text, and returns only narrative synthesis (executive summary, decision framing, risks, confidence, recommended investigations, rationale per decision option). Board Review never mutates the Domain and has no accept step — the human records the actual decision through the pre-existing decisions endpoint.
+MFP v1.1 is now functionally complete per the roadmap's own Success Definition and Definition of Done.
 AI proposals remain auditable and are no longer silently trusted.
 
 ---
@@ -224,6 +226,7 @@ AI proposals remain auditable and are no longer silently trusted.
 - AI research persisted into the Domain
 - AI red team review (challenges proposed against real case ids)
 - AI red team review acceptance
+- Prepare Board briefings for human decisions (no Domain mutation, AI never sees an identifier)
 
 ---
 
@@ -294,6 +297,18 @@ Domain
 
 ↓
 
+Board Review
+
+↓
+
+Human Reads Briefing
+
+↓
+
+Record Decision
+
+↓
+
 DuckDB
 
 ↓
@@ -305,18 +320,19 @@ Timeline / Brief
 
 # Current Sprint Goal
 
-Build the Board Review capability, the last of the three MFP organisational roles (Research, Red Team, Board).
+Exercise the full MFP loop end to end (Case → Research → Red Team → Board → Decision) against a real case, now that all three MFP organisational roles (Research, Red Team, Board) exist.
 
 ---
 
 # Next Tasks
 
-1. Build the Board Review capability (`IBoardReviewService`, briefing DTO covering evidence/objections/confidence, no Domain changes expected).
+1. Run the full MFP loop end to end against a real case to validate the roadmap's Definition of Done, not just each capability in isolation.
 2. Empirically tune Red Team's Guid-targeting reliability against the running local model; fall back to short reference tags if the rejection rate proves too high.
-3. Improve Research Analyst prompt quality.
-4. Reduce hallucinated facts and unsupported statistics.
-5. Introduce richer citation/provenance model.
-6. Evaluate the smallest commercially valuable deliverable for first customers.
+3. Decide whether to close the Action/Outcome loop (deliberately deferred, out of v1.1 scope) or move toward the first commercially valuable slice.
+4. Improve Research Analyst prompt quality.
+5. Reduce hallucinated facts and unsupported statistics.
+6. Introduce richer citation/provenance model.
+7. Evaluate the smallest commercially valuable deliverable for first customers.
 
 ---
 
@@ -344,6 +360,8 @@ Build the Board Review capability, the last of the three MFP organisational role
 - Research output quality is more important than response speed.
 - Red Team asks the model to copy real Guids verbatim as challenge targets, a harder generation task than Research's small-integer indexes — expect a higher rejection rate at the quality-check stage until tuned.
 - `Challenge` does not yet carry severity, proposed mitigation, or withdrawal-condition fields, though the Constitution's Red Team Doctrine calls for them — folded into the free-text Reasoning field for now.
+- `Assumption` has no status-transition mutator at all, and although `Hypothesis`/`Opportunity` have `MarkSupported`/`MarkChallenged`/`Accept`/`Reject`/`Supersede` domain methods, no endpoint calls them — every one of these three entity types is permanently stuck at its initial status today. Board Briefing's "unresolved assumptions" is therefore honestly "all assumptions," not a filtered subset.
+- Research/Red Team quality findings are never persisted; Board Review only sees them if the caller explicitly passes them back in from a prior response.
 
 ---
 
@@ -351,6 +369,8 @@ Build the Board Review capability, the last of the three MFP organisational role
 
 - AI produces proposals only.
 - Domain remains authoritative.
+- Board Review's AI receives no identifiers of any kind — only rendered text — the strictest AI/Domain boundary of the three capabilities built so far (Research proposes new entities; Red Team must copy real Guids; Board sees none at all).
+- Board Review has no accept step and creates no Domain object — the human reads the briefing and calls the pre-existing decision-recording endpoint separately.
 - Research acceptance reuses existing application handlers.
 - AI artifacts include generation metadata.
 - Personas are first-class concepts.
