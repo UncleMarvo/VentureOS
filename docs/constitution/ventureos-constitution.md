@@ -321,3 +321,20 @@ A good decision is one that was made using the best available evidence, with cle
 Every feature, agent, object, workflow, and architectural decision must be judged against this question:
 
 Does this help VentureOS turn uncertainty into evidence, evidence into decisions, and decisions into successful ventures?
+
+
+## Non-negotiables are:
+
+Evidence before conclusions.
+Structured organisational knowledge over conversations.
+Human governance over AI autonomy.
+Provider independence.
+Object-centric reasoning.
+Complete traceability and auditability.
+Capabilities with single responsibilities.
+The Domain is the source of truth.
+
+Everything else should serve those principles.
+
+
+Protect the philosophy first, the implementation second. If an implementation detail and the philosophy ever disagree, the implementation is wrong

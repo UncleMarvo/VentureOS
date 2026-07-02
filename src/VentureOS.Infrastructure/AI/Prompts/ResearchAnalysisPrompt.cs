@@ -1,3 +1,5 @@
+using VentureOS.Application.Research.EvidenceAcquisition;
+using VentureOS.Application.Research.ResearchPlanning;
 using VentureOS.Domain.Cases;
 using VentureOS.Infrastructure.AI.Personas;
 
@@ -5,8 +7,34 @@ namespace VentureOS.Infrastructure.AI.Prompts;
 
 public static class ResearchAnalysisPrompt
 {
-    public static string Build(Case ventureCase)
+    public static string Build(
+        Case ventureCase,
+        ResearchEvidencePlanDto evidencePlan,
+        EvidenceAcquisitionResultDto acquiredEvidence)
     {
+        var researchQuestions = string.Join(
+            Environment.NewLine,
+            evidencePlan.Questions
+                .OrderBy(question => question.Priority)
+                .Select(question => $"- [Priority {question.Priority}] {question.Question}"));
+
+        var evidenceNeeds = string.Join(
+            Environment.NewLine,
+            evidencePlan.EvidenceNeeds
+                .Select(need => $"- {need.Topic}{Environment.NewLine}  Reason: {need.Reason}"));
+
+        var acquiredEvidenceText = string.Join(
+            Environment.NewLine + Environment.NewLine,
+            acquiredEvidence.Evidence.Select(e =>
+                $"""
+                - Question: {e.ResearchQuestion}
+                  Findings: {e.Findings}
+                  Source: {e.SourceReference}
+                  Confidence: {e.Confidence}
+                  Unknowns:
+                    {string.Join(Environment.NewLine, e.Unknowns.Select(u => $"    - {u}"))}
+                """));
+
         return $$"""
         {{ResearchAnalystPersona.Text}}
 
@@ -17,8 +45,18 @@ public static class ResearchAnalysisPrompt
         Title: {{ventureCase.Title}}
         Mission: {{ventureCase.Mission}}
 
+        Evidence Plan:
+        Research Questions:
+        {{researchQuestions}}
+
+        Evidence Required:
+        {{evidenceNeeds}}
+
+        Acquired Evidence:
+        {{acquiredEvidenceText}}
+
         Purpose:
-        Help a human founder, operator, or investor understand whether this case deserves deeper investigation.
+        Help a human founder, operator, investor, or advisor decide whether this venture deserves deeper investigation.
 
         Important:
         This is analysis only.
@@ -26,27 +64,33 @@ public static class ResearchAnalysisPrompt
         Do not force the output into Domain objects.
         Do not make a final recommendation.
         Do not decide whether the venture should proceed.
+        Do not output a template.
+        Do not include placeholders.
+        Do not include example text.
+        Do not use curly-brace placeholder syntax.
+        Every sentence must refer to the actual venture case.
+        If the case does not provide enough information, say what is unknown.
 
-        Research standard:
+        Research Standard:
         - Be commercially useful.
-        - Be specific to the case.
+        - Be specific to the venture.
         - Surface uncertainty clearly.
         - Avoid hype.
         - Avoid generic startup advice.
-        - Prefer sharp insight over volume.
-        - Distinguish between what is known, what is inferred, and what must be validated.
+        - Prefer clear reasoning over unsupported conclusions.
+        - Distinguish between what is known, what is inferred, and what requires validation.
 
-        Evidence discipline:
+        Evidence Discipline:
         - Do not invent statistics.
         - Do not invent market sizes.
         - Do not invent adoption rates.
         - Do not invent pricing.
-        - Do not invent competitor claims.
+        - Do not invent competitor capabilities.
         - Do not invent named studies, reports, organisations, dates, or source titles.
-        - If something is not known, say it is unknown.
-        - If something is plausible but unverified, describe it as a hypothesis or assumption.
+        - If something is unknown, state that it is unknown.
+        - If something is plausible but unverified, describe it as an assumption or hypothesis.
 
-        Numerical discipline:
+        Numerical Discipline:
         - Do not create numerical targets.
         - Do not create percentage targets.
         - Do not create pricing targets.
@@ -54,44 +98,144 @@ public static class ResearchAnalysisPrompt
         - Do not create conversion targets.
         - Do not create time-saving targets.
         - Do not create time-spent estimates.
-        - If a metric would be useful, describe the metric to validate, not the expected number.
+        - If a metric would be useful, describe the metric that should be validated rather than inventing a value.
 
-        Analyse the case using these sections:
+        Use the evidence plan to guide your investigation.
+        Where evidence is unavailable, state that it is currently unknown rather than inventing an answer.
 
-        1. Situation Understanding
-        Explain what the venture is trying to determine.
+        Use the following framework as thinking guidance.
+        Write actual analysis for this venture case.
+        Do not reproduce the framework as a template.
 
-        2. Commercial Relevance
-        Identify why this problem may or may not matter commercially.
+        1. Venture
 
-        3. Customer and Buyer Considerations
-        Identify likely customer pain, buyer motivation, adoption friction, and willingness-to-pay uncertainty.
+        Understand the venture.
 
-        4. Market and Competitive Considerations
-        Identify likely market dynamics, substitutes, differentiation risks, and competitive pressure.
+        Identify:
+        - the proposed venture
+        - the outcome it seeks
+        - the decision this research should inform
 
-        5. Operational, Technical, and Trust Considerations
-        Identify workflow, integration, accuracy, privacy, reliability, and implementation concerns.
+        2. Problem
 
-        6. Key Assumptions
-        Identify what must be true for the venture to work.
+        Investigate the problem.
 
-        7. Testable Hypotheses
-        Identify what should be validated next.
+        Identify:
+        - the problem being addressed
+        - who experiences it
+        - why it matters
+        - the impact if left unsolved
 
-        8. Challenges and Risks
-        Identify the strongest reasons the opportunity may fail or be less attractive than expected.
+        3. Customer
 
-        9. Validation Priorities
-        Identify the most important things a human should investigate next.
+        Investigate the customer.
 
-        Hypotheses should define what to test, not predict the result.
+        Identify:
+        - primary customer
+        - primary beneficiary
+        - likely buyer
+        - likely decision maker
+        - adoption considerations
 
-        Bad:
-        "SMEs will pay $5-10 per user per month."
+        4. Market
 
-        Good:
-        "SMEs will show willingness to pay for an AI meeting assistant when the perceived administrative time saving is clear."
+        Investigate the market.
+
+        Identify:
+        - market characteristics
+        - maturity
+        - growth drivers
+        - fragmentation
+        - notable trends
+        - relevant regulatory or environmental factors
+
+        5. Existing Behaviour
+
+        Investigate how the problem is solved today.
+
+        Identify:
+        - existing products
+        - manual processes
+        - workarounds
+        - limitations of current approaches
+
+        6. Opportunity
+
+        Investigate the opportunity.
+
+        Identify:
+        - customer value
+        - commercial value
+        - differentiation opportunities
+        - timing considerations
+
+        7. Feasibility
+
+        Investigate feasibility.
+
+        Consider:
+        - technical feasibility
+        - operational feasibility
+        - commercial feasibility
+        - regulatory feasibility
+
+        8. Assumptions
+
+        Identify the assumptions that must be true for the venture to succeed.
+
+        Explain why each assumption matters.
+
+        9. Validation
+
+        Identify the most important uncertainties.
+
+        For each uncertainty, identify:
+        - what should be validated
+        - what evidence would reduce uncertainty
+        - what experiment or investigation should be performed
+
+        Validation hypotheses should identify what should be tested.
+
+        Do not predict outcomes.
+
+        Do not invent:
+        - prices
+        - market sizes
+        - percentages
+        - sample sizes
+        - trial durations
+        - conversion rates
+        - adoption rates
+        - accuracy rates
+        - time savings
+        - success thresholds
+
+        A hypothesis should describe an uncertainty that can be investigated.
+
+        Success criteria should describe the evidence that would increase or decrease confidence in the hypothesis, without inventing numerical targets.
+
+        If a numerical value has not been supplied in the venture case or supported by credible evidence, do not create one.
+
+        10. Risks
+
+        Identify the greatest risks.
+
+        Consider:
+        - customer risk
+        - market risk
+        - competitive risk
+        - technical risk
+        - operational risk
+        - commercial risk
+
+        11. Recommendation
+
+        Do not recommend proceeding or rejecting the venture.
+
+        Recommend only:
+        - the next areas for investigation
+        - the highest priority validation activities
+        - the greatest remaining uncertainties
 
         Keep the analysis concise but thoughtful.
         """;
