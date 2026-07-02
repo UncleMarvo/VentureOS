@@ -6,6 +6,8 @@ namespace VentureOS.Infrastructure.AI.Prompts;
 
 public static class EvidenceAcquisitionPrompt
 {
+    public const string Version = "1.0.0";
+
     public static string Build(
         Case ventureCase,
         ResearchQuestionDto researchQuestion)

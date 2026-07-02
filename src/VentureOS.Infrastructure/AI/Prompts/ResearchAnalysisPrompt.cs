@@ -7,6 +7,8 @@ namespace VentureOS.Infrastructure.AI.Prompts;
 
 public static class ResearchAnalysisPrompt
 {
+    public const string Version = "1.0.0";
+
     public static string Build(
         Case ventureCase,
         ResearchEvidencePlanDto evidencePlan,

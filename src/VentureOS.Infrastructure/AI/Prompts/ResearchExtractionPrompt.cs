@@ -4,6 +4,8 @@ namespace VentureOS.Infrastructure.AI.Prompts;
 
 public static class ResearchExtractionPrompt
 {
+    public const string Version = "1.0.0";
+
     public static string Build(string researchAnalysis)
     {
         return $$"""

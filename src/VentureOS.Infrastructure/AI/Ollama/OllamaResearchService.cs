@@ -137,12 +137,16 @@ public sealed class OllamaResearchService : IResearchService
                 $"Research quality issue [{issue.Severity}] {issue.Code} at {issue.Path}: {issue.Message}");
         }
 
+        var promptVersion =
+            $"{ResearchEvidencePlanningPrompt.Version}+{EvidenceAcquisitionPrompt.Version}" +
+            $"+{ResearchAnalysisPrompt.Version}+{ResearchExtractionPrompt.Version}";
+
         var researchGeneration = new ResearchGenerationDto(
             "Ollama",
             _options.Model,
             ResearchAnalystPersona.Name,
             ResearchAnalystPersona.Version,
-            "1.0.0",
+            promptVersion,
             DateTime.UtcNow,
             stopwatch.Elapsed,
             "AI-generated research requiring human review.");
