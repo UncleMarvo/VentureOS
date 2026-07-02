@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using VentureOS.Application.Research;
 using VentureOS.Application.Research.EvidenceAcquisition;
+using VentureOS.Application.Research.ResearchAnalysis;
 using VentureOS.Application.Research.ResearchCase;
 using VentureOS.Application.Research.ResearchPlanning;
 using VentureOS.Application.Research.ResearchQuality;
@@ -19,17 +20,20 @@ public sealed class OllamaResearchService : IResearchService
     private readonly OllamaOptions _options;
     private readonly IResearchPlanningService _researchPlanningService;
     private readonly IEvidenceAcquisitionService _evidenceAcquisitionService;
+    private readonly IResearchAnalysisService _researchAnalysisService;
 
     public OllamaResearchService(
         HttpClient httpClient,
         IOptions<OllamaOptions> options,
         IResearchPlanningService researchPlanningService,
-        IEvidenceAcquisitionService evidenceAcquisitionService)
+        IEvidenceAcquisitionService evidenceAcquisitionService,
+        IResearchAnalysisService researchAnalysisService)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _researchPlanningService = researchPlanningService;
         _evidenceAcquisitionService = evidenceAcquisitionService;
+        _researchAnalysisService = researchAnalysisService;
 
         _httpClient.BaseAddress = new Uri(_options.BaseUrl);
     }
@@ -49,26 +53,13 @@ public sealed class OllamaResearchService : IResearchService
             evidencePlan.Questions,
             cancellationToken);
 
-        var analysisPrompt = ResearchAnalysisPrompt.Build(
+        var analysisResult = await _researchAnalysisService.AnalyzeAsync(
             ventureCase,
             evidencePlan,
-            acquiredEvidence);
-
-        Console.WriteLine("========================================");
-        Console.WriteLine("ANALYSIS PROMPT");
-        Console.WriteLine("========================================");
-        Console.WriteLine(analysisPrompt);
-
-        var analysisText = await GenerateAsync(
-            analysisPrompt,
+            acquiredEvidence,
             cancellationToken);
 
-        Console.WriteLine("========================================");
-        Console.WriteLine("ANALYSIS");
-        Console.WriteLine("========================================");
-        Console.WriteLine(analysisText);
-
-        var extractionPrompt = ResearchExtractionPrompt.Build(analysisText);
+        var extractionPrompt = ResearchExtractionPrompt.Build(analysisResult.AnalysisText);
 
         var json = await GenerateAsync(
             extractionPrompt,

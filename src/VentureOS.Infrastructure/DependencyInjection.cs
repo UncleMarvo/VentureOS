@@ -15,6 +15,7 @@ using VentureOS.Application.Cases.RecordLesson;
 using VentureOS.Application.Decisions.GetDecisionContext;
 using VentureOS.Application.Research;
 using VentureOS.Application.Research.EvidenceAcquisition;
+using VentureOS.Application.Research.ResearchAnalysis;
 using VentureOS.Application.Research.ResearchCase;
 using VentureOS.Application.Research.ResearchPlanning;
 using VentureOS.Infrastructure.AI.Ollama;
@@ -71,6 +72,11 @@ public static class DependencyInjection
             });
         services
             .AddHttpClient<IResearchPlanningService, OllamaResearchPlanningService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(10);
+            });
+        services
+            .AddHttpClient<IResearchAnalysisService, OllamaResearchAnalysisService>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(10);
             });
