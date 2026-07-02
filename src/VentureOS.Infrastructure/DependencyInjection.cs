@@ -12,6 +12,7 @@ using VentureOS.Application.Cases.GetCaseTimeline;
 using VentureOS.Application.Cases.RaiseChallenge;
 using VentureOS.Application.Cases.RecordDecision;
 using VentureOS.Application.Cases.RecordLesson;
+using VentureOS.Application.Board;
 using VentureOS.Application.Decisions.GetDecisionContext;
 using VentureOS.Application.RedTeam;
 using VentureOS.Application.RedTeam.AcceptRedTeamReview;
@@ -91,6 +92,13 @@ public static class DependencyInjection
         services.AddScoped<AcceptRedTeamReviewHandler>();
         services
             .AddHttpClient<IRedTeamReviewService, OllamaRedTeamReviewService>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(10);
+            });
+
+        services.AddScoped<BoardCaseHandler>();
+        services
+            .AddHttpClient<IBoardReviewService, OllamaBoardReviewService>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(10);
             });
